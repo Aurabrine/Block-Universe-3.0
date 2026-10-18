@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Block Universe 3.0 — The Next Evolution</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#79c9f2;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#fff}canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none}.glass{background:rgba(7,19,32,.78);border:1px solid #b6eaff44;backdrop-filter:blur(8px);box-shadow:0 8px 28px #0002}
+#brand{position:absolute;top:12px;left:12px;padding:10px 14px;border-radius:14px}#brand b{font-size:16px;letter-spacing:1px;text-shadow:0 0 14px #71eaff88} #brand{border-color:#8eeaff66;background:linear-gradient(135deg,rgba(7,19,32,.9),rgba(31,22,68,.82))}#brand small{display:block;color:#b9d9e8;font-size:11px}
+#stats{position:absolute;top:78px;left:12px;padding:12px;border-radius:13px;font-size:12px;line-height:1.8;min-width:145px}#stats strong{color:#7df4c8}
+#tips{position:absolute;top:12px;right:12px;max-width:235px;padding:12px;border-radius:13px;font-size:11px;line-height:1.55;color:#d8edf8}
+#hotbar{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:7px;border-radius:14px;pointer-events:auto;max-width:96vw;overflow-x:auto}
+.slot{position:relative;width:58px;height:62px;flex:0 0 58px;background:#102338d9;border:1px solid #ffffff35;border-radius:10px;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}.slot.active{border:2px solid #74ffd0;background:#164f45}.slot span:first-child{font-size:22px}.slot small{font-size:10px}.slot em{position:absolute;right:5px;top:2px;font-size:10px;color:#ffdf82;font-style:normal}
+#crosshair{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);opacity:.9}#crosshair:before,#crosshair:after{content:"";position:absolute;background:white;box-shadow:0 0 3px #142638}#crosshair:before{left:8px;top:1px;width:2px;height:16px}#crosshair:after{top:8px;left:1px;height:2px;width:16px}
+#overlay.hidden{display:none!important;pointer-events:none!important}#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(#071b2b88,#071b2bd9);z-index:5;padding:20px}#card{max-width:460px;width:100%;text-align:center;padding:26px;border-radius:22px}#card h1{font-size:30px;margin:4px 0 6px}#card p{color:#c3dce9;font-size:14px;line-height:1.6}button{font:inherit}#start{border:0;border-radius:12px;padding:13px 22px;background:#72f0c4;color:#082c27;font-weight:900;font-size:16px;cursor:pointer;margin-top:8px}#start:hover{filter:brightness(1.07)}#toast{position:fixed;top:88px;left:50%;transform:translateX(-50%);padding:9px 15px;border-radius:99px;background:#102b3ddd;border:1px solid #7df4c877;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:4}#toast.show{opacity:1}
+#deathScreen{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(8,0,12,.82);backdrop-filter:blur(7px);text-align:center}#deathCard{width:min(92vw,440px);padding:30px 24px;border-radius:22px;background:linear-gradient(160deg,#260d18,#080b16);border:2px solid #ff405b;box-shadow:0 0 50px #ff173744}#deathCard h1{font-size:clamp(38px,8vw,62px);margin:0;color:#ff405b;text-shadow:0 0 22px #ff1744}#deathCause{font-size:18px;color:#fff;margin:16px 0 22px}#respawnButton{border:0;border-radius:12px;padding:13px 24px;background:#ff405b;color:white;font-weight:900;cursor:pointer}#modebuttons{position:fixed;right:12px;bottom:100px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:min(720px,calc(100vw - 24px));z-index:12;pointer-events:auto}.mode{border:1px solid #ffffff44;border-radius:10px;background:#0b2038dc;color:white;padding:9px 12px;cursor:pointer;font-weight:800;font-size:12px}.mode.active{background:#1d6b56;border-color:#78ffd0}
+@media(max-width:650px){#modebuttons{left:8px;right:8px;bottom:76px;justify-content:center;max-width:none}#tips{display:none}#stats{top:78px;min-width:125px;padding:8px;font-size:11px}.slot{width:52px;flex-basis:52px;height:58px}#hotbar{bottom:7px}.mode{padding:8px;font-size:11px}#modebuttons{bottom:82px}#brand b{font-size:14px}}
+</style>
+</head>
+<body><style>
+#genCurtain{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(circle at center,#1d2348 0%,#05060e 70%);color:#fff;font-family:system-ui;text-align:center}
+#genCurtain .planet{font-size:64px;animation:spinWorld 2s linear infinite,worldPulse 1s ease-in-out infinite alternate}
+#genCurtain .bar{width:min(76vw,360px);height:12px;background:#242943;border-radius:99px;overflow:hidden;margin-top:18px}
+#genCurtain .fill{height:100%;width:0;background:linear-gradient(90deg,#42e6c5,#9c6bff,#ff4f76);border-radius:99px}
+@keyframes spinWorld{to{transform:rotate(360deg)}} @keyframes worldPulse{to{filter:brightness(1.7);scale:1.12}}
+</style>
+<div id="genCurtain"><div class="planet">🌍</div><h1>GENERATING YOUR WORLD</h1><p id="genWords">Growing forests and frostlands…</p><div class="bar"><div class="fill" id="genFill"></div></div><p>Preparing your next evolution ✨</p></div>
+
+<div id="hud">
+ <div id="brand" class="glass"><b>🌌 BLOCK UNIVERSE 3.0 — THE NEXT EVOLUTION</b><small>EXPANDED BIOMES • DUNGEONS • BOSS BATTLES</small></div>
+ <div id="hungerHUD" class="glass" style="position:fixed;left:50%;top:108px;transform:translateX(-50%);padding:4px 9px;border-radius:10px;font-size:13px;z-index:5;white-space:nowrap">🍗🍗🍗🍗🍗🍗🍗🍗🍗🍗 <small id="hungerCount">10/10</small> <span style="font-size:10px;color:#c8e4ef">(E eat)</span></div>
+ <div id="healthHUD" class="glass" style="position:fixed;left:50%;top:72px;transform:translateX(-50%);font-size:20px;font-weight:900;letter-spacing:2px;color:#ff4d6d;text-shadow:0 2px 8px #000;white-space:nowrap;z-index:5">❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️ <small id="healthCount" style="font-size:12px;color:white;letter-spacing:0">20/20</small></div>
+ <div id="stats" class="glass">Mode: <strong id="modeText">PLAY</strong><br>Blocks mined: <strong id="mined">0</strong><br>Blocks placed: <strong id="placed">0</strong><br>Crystal shards: <strong id="crystals">0</strong><br>Gear: <strong id="gearMini">Starter Sword</strong><br>World: <strong>Frostlands + Dungeon</strong><br>Difficulty: <strong>HARDCORE-STYLE</strong></div>
+ <div id="tips" class="glass"><b>HOW TO PLAY</b><br>WASD = move · Mouse = look<br>Space = jump over blocks · Shift = run<br>Left click = mine · Right click = place<br>F = fight · E = eat food · Craft = gear<br><span style="color:#83f4ca">Tip: walk up to a block and aim at it!</span></div>
+ <div id="crosshair"></div><div id="hotbar" class="glass"></div>
+ <div id="modebuttons"><button class="mode active" id="playMode">🎮 Play</button><button class="mode" id="buildMode">🧱 Build</button><button class="mode" id="save">💾 Save</button><button class="mode" id="newWorld">✨ New</button><button class="mode" id="craftToggle">⚒️ Craft</button><button class="mode" id="netherToggle">🔥 Enter Nether</button><button class="mode" id="dragonToggle">🐉 Summon Dragon</button><button class="mode" id="skinToggle">🎨 Skins</button><button class="mode" id="selfViewToggle" title="Toggle third-person self view (V)">👤 Self View: OFF</button><button class="mode" id="rideDragonBtn">🐉 Ride Dragon</button><button class="mode" id="powerBtn">⚡ Superpower</button><button class="mode" id="legendArmorBtn">🛡️ Legendary Armor</button><button class="mode" id="superBossBtn">👑 Summon 10,000-Heart Boss</button></div>
+</div>
+
+<div id="skinPanel" class="glass" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:25;width:min(92vw,390px);max-height:82vh;overflow:auto;padding:16px;border-radius:18px;pointer-events:auto">
+ <b style="font-size:17px">🎨 CUSTOM SKIN STUDIO</b><p style="font-size:12px;color:#c3dce9;margin:5px 0 12px">Choose a preset or customize your colors. Your skin is saved on this Mac and shared with multiplayer friends.</p>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="skinPresets">
+ <button class="mode" data-skin="neon">💚 Neon Gamer</button><button class="mode" data-skin="shadow">🖤 Shadow Knight</button><button class="mode" data-skin="dragon">🐉 Dragon Slayer</button><button class="mode" data-skin="ninja">🥷 Ninja</button><button class="mode" data-skin="frost">❄️ Frost Warrior</button><button class="mode" data-skin="gold">👑 Gold Hero</button>
+ </div>
+ <div style="margin:10px 0;padding:10px;background:#06152299;border-radius:12px"><label for="customPlayerName" style="display:block;font-size:13px;margin-bottom:6px">🏷️ Your character name</label><div style="display:flex;gap:6px"><input id="customPlayerName" maxlength="18" placeholder="Enter a name" style="flex:1;min-width:0;padding:9px;border-radius:8px;border:1px solid #ffffff55;background:#071a2b;color:white"><button class="mode" id="savePlayerName" type="button">Save Name</button></div><small style="color:#c3dce9">Up to 18 characters. Your friends can see it in multiplayer.</small></div>
+ <div style="display:flex;align-items:center;gap:10px;margin:14px 0;padding:10px;background:#06152299;border-radius:12px"><div id="skinPreview" style="width:58px;height:78px;position:relative;flex:none"><div id="previewHead" style="position:absolute;left:18px;top:2px;width:24px;height:24px;background:#b6ff00;border:2px solid #ffffff77"></div><div id="previewBody" style="position:absolute;left:12px;top:28px;width:36px;height:28px;background:#21b95b;border:2px solid #ffffff77"></div><div id="previewLegs" style="position:absolute;left:14px;top:58px;width:32px;height:18px;background:#182638;border:2px solid #ffffff77"></div></div><div style="font-size:12px;color:#d7f5ff">Live pixel preview<br><strong id="skinName">Neon Gamer</strong><br><small>Colors are sent to players in your room.</small></div></div>
+ <label style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:13px">Head <input type="color" id="skinHead" value="#b6ff00"></label>
+ <label style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:13px">Body <input type="color" id="skinBody" value="#21b95b"></label>
+ <label style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:13px">Legs <input type="color" id="skinLegs" value="#182638"></label>
+ <div style="display:flex;gap:8px;margin-top:12px"><button class="mode" id="saveSkin" style="flex:1;background:#176b50">💾 Save & Apply</button><button class="mode" id="closeSkin">Close</button></div>
+</div>
+<div id="craftPanel" class="glass" style="display:none;position:fixed;right:12px;top:150px;z-index:6;padding:14px;border-radius:14px;width:260px;max-height:65vh;overflow:auto;pointer-events:auto"><b>⚒️ FORGE & CRAFT</b><p style="font-size:11px;color:#c3dce9;margin:5px 0 10px">Mine ores, then craft gear. Crafted gear improves your attacks.</p><button class="mode" id="buildBedCraft" style="display:block;width:100%;text-align:left;margin:8px 0;background:#315d85;border:1px solid #8fdcff">🛏️ Build Bed<br><small>Costs: 5 wood + 3 leaves</small></button><div id="craftItems" style="display:grid;gap:6px"></div><div id="gearStatus" style="font-size:11px;color:#8fffd6;margin-top:9px"></div><button class="mode" id="sleepButton" style="display:none;margin-top:8px;background:#315d85">🛏️ Sleep in Bed</button><button class="mode" id="closeCraft" style="margin-top:8px">Close</button></div><div id="toast"></div>
+<div id="startupError" role="alert" style="display:none;position:fixed;z-index:20;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,520px);padding:22px;border-radius:18px;background:#071522;color:white;border:2px solid #ffcc80;text-align:center;font-family:system-ui;box-shadow:0 12px 40px #0009"><h2>🌌 Your world is still loading</h2><p id="startupErrorText">The 3D world did not start correctly.</p><button onclick="location.reload()" style="padding:10px 16px;border:0;border-radius:10px;background:#72f0c4;color:#082c27;font-weight:800;cursor:pointer">Try Again</button><p style="font-size:12px;color:#c3dce9">Check your internet connection and open this file in Chrome.</p></div>
+<div id="deathScreen"><div id="deathCard"><div style="font-size:48px">💀</div><h1>YOU DIED</h1><div id="deathCause">You were slain by a Shadow Villain.</div><button id="respawnButton">RESPAWN ❤️</button></div></div>
+<div id="overlay"><div id="card" class="glass"><div style="font-size:48px">🌲💎🌌</div><h1>🌌 BLOCK UNIVERSE 3.0 — THE NEXT EVOLUTION</h1><div style="color:#78f3c6;font-weight:800">YOUR ADVENTURE STARTS HERE</div><p>Welcome to the next evolution: a bigger-feeling 3D block adventure with rugged biomes, a hidden dungeon, upgraded crafting, villages, dangerous enemies, and the Nether King. This is an experimental browser prototype; online graphics and multiplayer need internet.</p><p><b>Controls:</b> WASD to move, mouse to look, Space to jump over raised blocks, left-click to mine, right-click to build. Explore Forest, Ocean, Swamp, Grassland, the new Frostlands and the dangerous Nether. Discover a dungeon, meet village NPCs, mine rare ores, craft upgraded gear, and battle the Nether King. Multiplayer room controls are included, but connections depend on the network.</p><button id="start" type="button" onclick="(function(){var o=document.getElementById('overlay');if(o){o.classList.add('hidden');o.style.setProperty('display','none','important');o.style.setProperty('pointer-events','none','important');}try{if(typeof enterBlockUniverse==='function')enterBlockUniverse();}catch(e){console.error('World entry error:',e);}})()">ENTER MY WORLD 🚀</button><div id="startStatus" style="display:none;color:#bce9e1;font-size:12px;margin-top:10px">Opening your world… If the world does not appear, wait a moment; if it stays black, use the error message below to help us fix it.</div>
+<div style="margin-top:16px;padding:12px;border:1px solid #8cefd455;border-radius:14px;background:#06152299">
+ <b style="font-size:13px">🌐 MULTIPLAYER ROOM (BETA)</b><div style="font-size:11px;color:#d4e7f4;margin-top:5px">Anyone can enter alone. Choose a room code and click Create room or Join room; everyone who uses the same code enters the same room. You can play while waiting for others. Both players need internet for this online version.</div>
+ <div style="display:flex;gap:7px;margin-top:9px;justify-content:center;flex-wrap:wrap">
+  <button id="hostRoom" class="mode">Create room</button>
+  <input id="roomCode" aria-label="Room code" placeholder="Custom code (e.g. AURABRINE123)" style="width:145px;min-width:0;padding:8px;border-radius:8px;border:1px solid #ffffff55;background:#071a2b;color:white">
+  <button id="joinRoom" class="mode">Join room</button>
+ </div>
+ <div id="netStatus" style="font-size:11px;color:#bce9e1;margin-top:8px">Not connected · single-player works too</div><div style="font-size:10px;color:#c3dce9;margin-top:4px">Free online multiplayer uses Trystero/WebRTC. Internet is required; public relays may sometimes be unavailable.</div>
+</div><p style="font-size:11px">The game needs to load its 3D graphics library from an online source. Multiplayer also needs internet. If the world does not load, your internet may still be fine—the graphics source may be blocked or unavailable.</p></div></div>
+<script>
+window.__BU_STARTUP_OK = false;
+window.addEventListener('error', function(e) {
+  if (window.__BU_STARTUP_OK) return;
+  var panel = document.getElementById('startupError');
+  var msg = document.getElementById('startupErrorText');
+  if (panel && msg) {
+    msg.textContent = 'A startup error stopped the 3D world' + (e && e.message ? ': ' + e.message : '.') + ' Please reload once. If it happens again, tell a parent and share this message.';
+    panel.style.display = 'block';
+  }
+});
+window.addEventListener('unhandledrejection', function(e) {
+  if (window.__BU_STARTUP_OK) return;
+  var panel = document.getElementById('startupError');
+  var msg = document.getElementById('startupErrorText');
+  if (panel && msg) {
+    msg.textContent = 'The 3D graphics library could not finish loading. Your internet may be fine: Chrome or the network may be unable to reach the graphics servers. Try reloading once, or ask a parent to try another browser/network.';
+    panel.style.display = 'block';
+  }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+/* Backup CDN attempts if the first host is unavailable. */
+if (!window.THREE) {
+  document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+}
+if (!window.THREE) {
+  document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');
+}
+</script>
+<!-- Multiplayer uses Trystero (open-source WebRTC); loaded on demand below. -->
+<script>
+(()=> {
+if (!window.THREE) {
+  document.body.innerHTML = '<div style="min-height:100vh;display:grid;place-items:center;background:#071522;color:white;font-family:system-ui;padding:24px;text-align:center"><div style="max-width:520px"><h1>🌌 Block Universe 3.0</h1><h2>3D graphics could not load</h2><p>The 3D graphics library could not load from its online sources. Your internet may still be working; Chrome or the network may be blocking those sources. Try reloading, or ask a parent to try another browser or network.</p><p>If it still does not work, ask a parent to help check the internet connection.</p></div></div>';
+  return;
+}
+const overlay=document.getElementById('overlay'),toastEl=document.getElementById('toast');
+if(!window.THREE){document.getElementById('card').innerHTML='<h1>Almost there!</h1><p>The 3D graphics library did not load. Your internet may be fine; the browser or network may be blocking the online graphics source. Refresh once. If it still fails, ask a parent to try another browser or network.</p>';return}
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x83d3f7);scene.fog=new THREE.Fog(0x83d3f7,24,82);
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,120);camera.position.set(0,3,7);
+let renderer;
+try { renderer=new THREE.WebGLRenderer({antialias:false, powerPreference:"high-performance"}); }
+catch(err) {
+ const panel=document.getElementById('startupError');
+ const msg=document.getElementById('startupErrorText');
+ if(panel&&msg){msg.textContent='Chrome could not start 3D graphics on this device. Try updating Chrome or restarting it, then reload the game.';panel.style.display='block';}
+ throw err;
+}
+renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,0.65));renderer.shadowMap.enabled=false;renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.NoToneMapping;document.body.appendChild(renderer.domElement);renderer.domElement.style.position='fixed';renderer.domElement.style.inset='0';renderer.domElement.style.zIndex='0';document.getElementById('hud').style.zIndex='2';
+scene.add(new THREE.HemisphereLight(0xd8f4ff,0x52633f,1.45));const sun=new THREE.DirectionalLight(0xfff4d6,1.8);sun.position.set(-18,30,12);sun.castShadow=false;scene.add(sun);
+const materials={
+ grass:new THREE.MeshStandardMaterial({color:0x183b18,roughness:1}),
+ dirt:new THREE.MeshStandardMaterial({color:0x382013,roughness:1}),
+ stone:new THREE.MeshStandardMaterial({color:0x303941,roughness:.92}),
+ wood:new THREE.MeshStandardMaterial({color:0x321b0d,roughness:1}),
+ leaves:new THREE.MeshStandardMaterial({color:0x0b351c,roughness:1}),
+ water:new THREE.MeshStandardMaterial({color:0x1678b5,roughness:.24,metalness:.08,transparent:true,opacity:.84}),
+ crystal:new THREE.MeshStandardMaterial({color:0x9b78ff,emissive:0x4527a0,emissiveIntensity:.9,roughness:.18}),
+ sand:new THREE.MeshStandardMaterial({color:0x625735,roughness:1}),
+ mud:new THREE.MeshStandardMaterial({color:0x28231b,roughness:1}),
+ plank:new THREE.MeshStandardMaterial({color:0x462b16,roughness:1}),
+ roof:new THREE.MeshStandardMaterial({color:0x8e3931,roughness:.9}),
+ villager:new THREE.MeshStandardMaterial({color:0x367eaa,roughness:.8}),
+ villagerSkin:new THREE.MeshStandardMaterial({color:0xe7b58a,roughness:.85}),
+ snow:new THREE.MeshStandardMaterial({color:0xdcecf5,roughness:.95}),
+ ice:new THREE.MeshStandardMaterial({color:0x6dc9ed,roughness:.2,metalness:.12,transparent:true,opacity:.88}),
+ obsidian:new THREE.MeshStandardMaterial({color:0x171126,roughness:.35,metalness:.22,emissive:0x130a25,emissiveIntensity:.35})
+};
+// A few gentle colour variations make the landscape feel less flat.
+const grassPalette=[0x40803c,0x478842,0x397d37,0x4e8c46].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:1}));
+const stonePalette=[0x899ba8,0x9aaab5,0x7e909d].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.92}));
+const flowerMaterials=[0xffe58a,0xff91bf,0xffffff,0xb9a5ff].map(c=>new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.12,roughness:.65}));
+
+// Hand-made tiny textures are drawn right here in the browser: no extra downloads needed.
+function makeBlockTexture(kind,base,seed){
+ const c=document.createElement('canvas');c.width=128;c.height=128;
+ const g=c.getContext('2d');g.fillStyle=base;g.fillRect(0,0,128,128);
+ let n=seed>>>0;const rnd=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296};
+ if(kind==='wood'){
+   for(let y=0;y<128;y+=8){g.fillStyle=y%16===0?'#3e2818':'#c28a4b';g.globalAlpha=.24;g.fillRect(0,y,128,2);g.globalAlpha=1}
+   for(let i=0;i<18;i++){g.strokeStyle=i%2?'#4d2d19':'#d6a364';g.globalAlpha=.3;g.lineWidth=1+rnd()*2;g.beginPath();let x=rnd()*128;g.moveTo(x,0);g.bezierCurveTo(x-5,40,x+6,80,x-3,128);g.stroke()}g.globalAlpha=1;
+ } else {
+   const colors=kind==='grass'?['#72c94b','#2f7e31','#a1d65a','#286a2d']:kind==='dirt'?['#b47a48','#5b351f','#d09459','#744326']:kind==='stone'?['#9eafb8','#455663','#71828d','#c0cbd0']:kind==='leaves'?['#4dc66a','#0f5a30','#7bdc73','#24783e']:kind==='water'?['#67d9ff','#0e65a6','#b7f3ff','#248cc8']:['#eee5ff','#7757d6','#b9a9ff','#44308d'];
+   for(let i=0;i<460;i++){g.globalAlpha=.12+rnd()*.34;g.fillStyle=colors[Math.floor(rnd()*colors.length)];let size=kind==='stone'?3+rnd()*14:2+rnd()*8;g.fillRect(Math.floor(rnd()*128/size)*size,Math.floor(rnd()*128/size)*size,size,size)}
+   if(kind==='grass'){
+   // Minecraft-style mini pixels: crisp little green squares across the grass face.
+   g.globalAlpha=1;
+   const grassPixels=['#245f2a','#2f7e31','#3f9638','#72c94b','#8ed957','#a1d65a','#1d5425'];
+   for(let i=0;i<360;i++){
+     g.fillStyle=grassPixels[Math.floor(rnd()*grassPixels.length)];
+     const size=2+Math.floor(rnd()*4);
+     g.fillRect(Math.floor(rnd()*128/size)*size,Math.floor(rnd()*128/size)*size,size,size);
+   }
+   // A darker, pixelated soil edge under the green top.
+   g.fillStyle='#24652b';g.fillRect(0,0,128,12);
+   for(let i=0;i<85;i++){g.fillStyle=i%3===0?'#9fe76b':i%3===1?'#317c34':'#4a9a3c';const size=2+Math.floor(rnd()*3);g.fillRect(Math.floor(rnd()*128/size)*size,Math.floor(rnd()*15/size)*size,size,size)}
+ }
+   if(kind==='stone'){g.globalAlpha=.32;g.strokeStyle='#e3f0f4';for(let i=0;i<10;i++){g.beginPath();let x=rnd()*128,y=rnd()*128;g.moveTo(x,y);g.lineTo(x+5+rnd()*18,y-2+rnd()*12);g.stroke()}}
+   if(kind==='water'){g.globalAlpha=.6;g.strokeStyle='#d7faff';g.lineWidth=2;for(let i=0;i<10;i++){let x=rnd()*128,y=rnd()*128;g.beginPath();g.moveTo(x,y);g.lineTo(x+8+rnd()*24,y);g.stroke()}}
+   g.globalAlpha=1;
+ }
+ const tex=new THREE.CanvasTexture(c);tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestMipmapLinearFilter;tex.colorSpace=THREE.SRGBColorSpace||THREE.sRGBEncoding;tex.needsUpdate=true;return tex;
+}
+const blockTextures={
+ grass:makeBlockTexture('grass','#347d32',41),dirt:makeBlockTexture('dirt','#704126',52),
+ stone:makeBlockTexture('stone','#657783',63),wood:makeBlockTexture('wood','#70401f',74),
+ leaves:makeBlockTexture('leaves','#176d39',85),water:makeBlockTexture('water','#1678b5',96),
+ crystal:makeBlockTexture('crystal','#9b78ff',107)
+};
+for(const id of Object.keys(materials)){materials[id].map=blockTextures[id];materials[id].needsUpdate=true}
+materials.copper=new THREE.MeshStandardMaterial({color:0xc87545,roughness:.48,metalness:.45,emissive:0x3a1305,emissiveIntensity:.28});
+materials.iron=new THREE.MeshStandardMaterial({color:0xaab6c4,roughness:.38,metalness:.65,emissive:0x18212d,emissiveIntensity:.2});
+materials.gold=new THREE.MeshStandardMaterial({color:0xffca36,roughness:.28,metalness:.72,emissive:0x4b2c00,emissiveIntensity:.35});
+materials.netherrack=materials.netherrack||new THREE.MeshStandardMaterial({color:0x351018});materials.lava=materials.lava||new THREE.MeshStandardMaterial({color:0xff4b08,emissive:0xff2500});materials.quartz=materials.quartz||new THREE.MeshStandardMaterial({color:0xf4d8d2});
+materials.diamond=new THREE.MeshStandardMaterial({color:0x50f4e6,roughness:.18,metalness:.25,emissive:0x087d9a,emissiveIntensity:.9});
+materials.netherrack=new THREE.MeshStandardMaterial({color:0x351018,roughness:1,emissive:0x260509,emissiveIntensity:.3});materials.lava=new THREE.MeshStandardMaterial({color:0xff4b08,emissive:0xff2500,emissiveIntensity:1.8});materials.quartz=new THREE.MeshStandardMaterial({color:0xf4d8d2,roughness:.4,emissive:0x4a1714,emissiveIntensity:.2});
+// Pixel-art pass: every terrain/material block gets a tiny nearest-filtered texture.
+// Small 128px canvases are generated once and reused, keeping runtime cost low.
+const extraPixelPalettes={
+ sand:['#b7a16a','#776744','#d2bd82','#8f7c4f'], mud:['#625746','#302b23','#81735c','#454035'],
+ plank:['#9a6b3e','#54371f','#bd8952','#704a2b'], roof:['#b84d42','#642b2c','#d06c51','#803537'],
+ snow:['#ffffff','#c7dce8','#e8f4f8','#a8c6d8'], ice:['#b2f2ff','#4eacd1','#d9fbff','#6cc9e8'],
+ obsidian:['#44345f','#171126','#695080','#29203b'], copper:['#e69a64','#8d4b2b','#c87545','#633a2c'],
+ iron:['#d5e0e8','#758491','#aab6c4','#52616e'], gold:['#ffe477','#b77b17','#ffca36','#8c5b12'],
+ diamond:['#a5fff8','#35bfc1','#50f4e6','#197f9a'], netherrack:['#762b35','#351018','#a13c43','#4d171f'],
+ lava:['#ffb12b','#ff4b08','#ffe06b','#c51d08'], quartz:['#fff0e8','#c99c9a','#f4d8d2','#9e666b']
+};
+for(const id of ['grass','dirt','stone','wood','leaves','water','crystal','sand','mud','plank','roof','snow','ice','obsidian','copper','iron','gold','diamond','netherrack','lava','quartz']){
+ if(!blockTextures[id]){
+  const palette=extraPixelPalettes[id]||['#c8c8c8','#555555','#eeeeee','#888888'];
+  const tex=makeBlockTexture(id,palette[0],id.split('').reduce((a,ch)=>a+ch.charCodeAt(0),17));
+  // Overlay a few chunky palette pixels specific to this block type.
+  const canvas=tex.image,ctx=canvas.getContext('2d');let seed=id.length*137+19;
+  for(let i=0;i<180;i++){seed=(seed*1664525+1013904223)>>>0;const x=(seed%32)*4;seed=(seed*1664525+1013904223)>>>0;const y=(seed%32)*4;seed=(seed*1664525+1013904223)>>>0;ctx.globalAlpha=.28+(seed%45)/100;ctx.fillStyle=palette[seed%palette.length];ctx.fillRect(x,y,4,4)}
+  ctx.globalAlpha=1;tex.needsUpdate=true;blockTextures[id]=tex;
+ }
+ materials[id].map=blockTextures[id];materials[id].needsUpdate=true;
+}
+const villainBodyMat=new THREE.MeshStandardMaterial({color:0x7025a8,roughness:.72,emissive:0x180526,emissiveIntensity:.35});
+const villainEyeMat=new THREE.MeshStandardMaterial({color:0xff172b,emissive:0xff0011,emissiveIntensity:3.2});
+const bossBodyMat=new THREE.MeshStandardMaterial({color:0x251238,roughness:.42,metalness:.25,emissive:0x4a075f,emissiveIntensity:.85});
+const bossEyeMat=new THREE.MeshStandardMaterial({color:0xff1025,emissive:0xff0015,emissiveIntensity:3.8});
+const bossCrownMat=new THREE.MeshStandardMaterial({color:0x48e8ff,metalness:.75,roughness:.2,emissive:0x0088aa,emissiveIntensity:1.3});
+
+
+
+
+const defs=[['grass','🟩','Grass'],['dirt','🟫','Dirt'],['stone','⬜','Stone'],['wood','🪵','Wood'],['leaves','🌿','Leaves'],['crystal','💎','Crystal'],['copper','🟠','Copper'],['iron','⚙️','Iron'],['gold','🟡','Gold'],['diamond','💠','Diamond'],['snow','❄️','Snow'],['ice','🧊','Ice'],['obsidian','⬛','Obsidian']];
+const recipes=[{id:'bed',name:'Build Bed',emoji:'🛏️',cost:{wood:5,leaves:3},type:'bed',power:0},{id:'thunder_sword',name:'Thunder Sword',emoji:'⚡',cost:{gold:3,iron:2,crystal:1},type:'weapon',power:28},{id:'frost_bow',name:'Frost Bow',emoji:'🏹',cost:{ice:4,wood:3,crystal:1},type:'weapon',power:24},{id:'shadow_axe',name:'Shadow Axe',emoji:'🪓',cost:{obsidian:4,iron:3},type:'weapon',power:32},{id:'copper_pick',name:'Copper Pickaxe',emoji:'⛏️',cost:{copper:3,wood:2},type:'tool',power:1.5},{id:'iron_pick',name:'Iron Pickaxe',emoji:'⛏️',cost:{iron:3,wood:2},type:'tool',power:2},{id:'diamond_pick',name:'Diamond Pickaxe',emoji:'⛏️',cost:{diamond:3,wood:2},type:'tool',power:3},{id:'iron_sword',name:'Iron Sword',emoji:'⚔️',cost:{iron:3,wood:1},type:'weapon',power:20},{id:'diamond_sword',name:'Diamond Sword',emoji:'🗡️',cost:{diamond:3,wood:1},type:'weapon',power:35},{id:'iron_armor',name:'Iron Armor',emoji:'🛡️',cost:{iron:6},type:'armor',power:0.25},{id:'gold_armor',name:'Gold Armor',emoji:'🛡️',cost:{gold:6},type:'armor',power:0.35},{id:'diamond_armor',name:'Diamond Armor',emoji:'💠',cost:{diamond:6},type:'armor',power:0.5},{id:'crystal_blade',name:'Crystal Blade',emoji:'🔮',cost:{crystal:4,diamond:2,wood:1},type:'weapon',power:48},{id:'obsidian_guard',name:'Obsidian Armor',emoji:'🖤',cost:{obsidian:6,iron:3},type:'armor',power:0.65},{id:'frost_pick',name:'Frost Pickaxe',emoji:'❄️',cost:{ice:4,iron:2,wood:2},type:'tool',power:3.5},{id:'bread',name:'Bake Bread',emoji:'🍞',cost:{wood:2,leaves:2},type:'food',power:3},{id:'apple_pack',name:'Apple Pack',emoji:'🍎',cost:{leaves:2,wood:1},type:'food',power:2}];
+let crafted={},equippedWeapon='Starter Sword',equippedTool='Hand Pick',equippedArmor='No Armor',weaponDamage=10,armorDefense=0,netherMode=false;
+let playerHealth=20, maxPlayerHealth=20, hunger=10, maxHunger=10, hungerClock=0, playerDead=false, lastAttacker='a Shadow Villain', netherWorldSeed=Math.floor(Math.random()*90000)+1000, lastWorldShift=0;
+let inventory={grass:30,dirt:15,stone:12,wood:10,leaves:8,crystal:2,copper:0,iron:0,gold:0,diamond:0,ice:0,obsidian:0,apple:3,bread:1},selected='grass',mode='play',mined=0,placed=0,crystals=0,objects=[],blocks=new Map(),trees=[],scenery=[],clouds=[],sparkles=[],villains=[],villagers=[],villainsDefeated=0,netherKing=null,bossHealth=2400,bossAttackTimer=0,bossBattleStarted=0,keys={},yaw=0,pitch=0,locked=false,velocityY=0,onGround=false,worldTime=0,nightSpawnClock=0,lastNightState=false;
+const DAY_SECONDS=15*60,NIGHT_SECONDS=10*60,CYCLE_SECONDS=DAY_SECONDS+NIGHT_SECONDS;
+function isNight(){const t=worldTime%CYCLE_SECONDS;return t>=DAY_SECONDS;}
+function clearOverworldEvilMobs(){for(const v of [...villains]){if(v.userData.kind==='villain'||v.userData.kind==='dragon')removeVillain(v);}}
+function updateDayNight(dt){const night=isNight();if(night!==lastNightState){lastNightState=night;nightSpawnClock=0;if(night)say('🌙 NIGHT HAS FALLEN! Shadow Villains are coming!');else{clearOverworldEvilMobs();say('☀️ Sunrise! The Shadow Villains have vanished.');}}if(night&&!netherMode){nightSpawnClock+=dt;if(nightSpawnClock>=28){nightSpawnClock=0;const regular=villains.filter(v=>v.userData.kind==='villain').length;if(regular<4){const a=Math.random()*Math.PI*2,r=10+Math.random()*7;spawnVillain(player.x+Math.cos(a)*r,player.z+Math.sin(a)*r);}}}}
+const player={x:0,y:2,z:4,speed:5.2};const raycaster=new THREE.Raycaster();raycaster.far=6;const cubeGeo=new THREE.BoxGeometry(1,1,1);
+const key=(x,y,z)=>`${x},${y},${z}`;
+function addBlock(x,y,z,type,save=true){let base=materials[type]||materials.grass;const tint=Math.abs(Math.floor(x*17+z*31+y*7));if(type==='grass')base=grassPalette[tint%grassPalette.length];if(type==='stone')base=stonePalette[tint%stonePalette.length];const mat=base.clone();if(mat.color)mat.color.multiplyScalar((type==='diamond'||type==='crystal')?.84:.70);if(mat.emissive&&type!=='diamond'&&type!=='crystal')mat.emissive.multiplyScalar(.72);const mesh=new THREE.Mesh(cubeGeo,mat);mesh.position.set(x,y,z);mesh.castShadow=false;mesh.receiveShadow=false;if(['diamond','gold'].includes(type))mesh.material.emissiveIntensity=type==='diamond'?.95:.42;mesh.userData={x,y,z,type,kind:'block'};scene.add(mesh);blocks.set(key(x,y,z),mesh);objects.push(mesh);if(save){}return mesh}
+function removeMesh(mesh){scene.remove(mesh);blocks.delete(key(mesh.userData.x,mesh.userData.y,mesh.userData.z));objects=objects.filter(o=>o!==mesh)}
+function addScenery(mesh){scene.add(mesh);scenery.push(mesh);return mesh}
+function clearScenery(){for(const o of scenery)scene.remove(o);scenery=[];clouds=[];sparkles=[]}
+function createScenery(seed){
+  // Soft, distant mountains make the world feel much bigger.
+  const mountainMats=[0x7ea7b0,0x648b9b,0x9bb7c0].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:1,flatShading:true}));
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2,r=27+(i%4)*2,h=5+seeded(seed+i*8)*10;const m=new THREE.Mesh(new THREE.ConeGeometry(3.8+(i%3),h,5),mountainMats[i%mountainMats.length]);m.position.set(Math.cos(a)*r,h/2-1,Math.sin(a)*r);m.rotation.y=a*.7;m.receiveShadow=true;addScenery(m)}
+  // Puffy clouds drift slowly across the sky.
+  const cloudMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.82});
+  for(let i=0;i<3;i++){const group=new THREE.Group();const x=-28+seeded(seed+i*5)*56,z=-25+seeded(seed+i*9)*50;for(let j=0;j<3;j++){const puff=new THREE.Mesh(new THREE.SphereGeometry(1.05+(j%2)*.25,8,6),cloudMat);puff.position.set((j-1.5)*.85,seeded(i*11+j)*.35,(j%2)*.25);group.add(puff)}group.position.set(x,9+seeded(i+seed)*5,z);group.userData.drift=.35+seeded(i+seed*2)*.45;addScenery(group);clouds.push(group)}
+  // Tiny colourful flowers and glowing motes decorate the grass without blocking mining.
+  for(let i=0;i<10;i++){const x=-9+Math.floor(seeded(seed+i*13)*19),z=-9+Math.floor(seeded(seed+i*19)*19);if(Math.abs(x-3)<2||Math.hypot(x,z)<3)continue;const top=worldTopAt(x,z);if(top===null)continue;if(seeded(seed+i*23)>.58){const stem=new THREE.Mesh(new THREE.CylinderGeometry(.025,.035,.22,4),new THREE.MeshStandardMaterial({color:0x36894b}));stem.position.set(x,top+.11,z);addScenery(stem);const flower=new THREE.Mesh(new THREE.OctahedronGeometry(.105),flowerMaterials[i%flowerMaterials.length]);flower.position.set(x,top+.27,z);addScenery(flower)}}
+  const moteGeo=new THREE.SphereGeometry(.045,6,5),moteMat=new THREE.MeshBasicMaterial({color:0xbafee7,transparent:true,opacity:.8});for(let i=0;i<4;i++){const m=new THREE.Mesh(moteGeo,moteMat);m.position.set(-12+seeded(i+seed*3)*24,1.5+seeded(i+seed*5)*5,-12+seeded(i+seed*7)*24);addScenery(m);sparkles.push(m)}
+}
+function worldTopAt(x,z){let top=null;for(const [k,m] of blocks){const u=m.userData;if(u.x===x&&u.z===z&&u.type==='grass'&&(top===null||u.y>top))top=u.y+.5}return top}
+function addTree(x,z){let trunk=new THREE.Mesh(new THREE.BoxGeometry(.42,1.7,.42),materials.wood);trunk.position.set(x,1.15,z);trunk.castShadow=false;trunk.userData={kind:'tree',x,y:1,z};scene.add(trunk);objects.push(trunk);let crown=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.45,1.6),materials.leaves);crown.position.set(x,2.45,z);crown.castShadow=false;crown.userData={kind:'tree',x,y:2,z};scene.add(crown);objects.push(crown);let crownTop=new THREE.Mesh(new THREE.BoxGeometry(1.15,1.05,1.15),materials.leaves);crownTop.position.set(x,3.35,z);crownTop.castShadow=false;crownTop.userData={kind:'tree',x,y:3,z};scene.add(crownTop);objects.push(crownTop);trees.push({trunk,crown,crownTop})}
+
+
+function makeHouse(x,z){
+ const group=new THREE.Group();
+ const base=new THREE.Mesh(new THREE.BoxGeometry(2.5,1.8,2.2),materials.plank);base.position.y=.9;base.castShadow=false;group.add(base);
+ const roof=new THREE.Mesh(new THREE.ConeGeometry(1.95,1.25,4),materials.roof);roof.position.y=2.35;roof.rotation.y=Math.PI/4;roof.castShadow=false;group.add(roof);
+ const door=new THREE.Mesh(new THREE.BoxGeometry(.42,.85,.06),materials.wood);door.position.set(0,.43,-1.13);group.add(door);
+ const winMat=new THREE.MeshStandardMaterial({color:0x8de7ff,emissive:0x246c83,emissiveIntensity:.4});
+ for(const wx of [-.75,.75]){const w=new THREE.Mesh(new THREE.BoxGeometry(.38,.35,.05),winMat);w.position.set(wx,1.12,-1.13);group.add(w);}
+ group.position.set(x,0,z);scene.add(group);objects.push(group);return group;
+}
+function addNpcNameTag(group, label, height=2.05){
+ // A small canvas-backed sprite keeps each NPC name readable above its head.
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=96;
+ const ctx=canvas.getContext('2d');ctx.clearRect(0,0,512,96);
+ ctx.fillStyle='rgba(8,15,28,0.78)';ctx.beginPath();
+ const x=12,y=12,w=488,h=72,r=20;ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(130,245,220,0.9)';ctx.lineWidth=4;ctx.stroke();
+ ctx.font='bold 36px Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffffff';ctx.shadowColor='#000000';ctx.shadowBlur=4;ctx.fillText(String(label||'NPC'),256,49,450);
+ const tex=new THREE.CanvasTexture(canvas);tex.needsUpdate=true;
+ const mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false});
+ const tag=new THREE.Sprite(mat);tag.name='npcNameTag';tag.position.set(0,height,0);tag.scale.set(3.1,.58,1);tag.renderOrder=999;group.add(tag);
+ group.userData.nameTag=tag;return tag;
+}
+function spawnVillager(x,z,index=0){
+ const g=new THREE.Group();
+ const robe=new THREE.Mesh(new THREE.BoxGeometry(.62,.86,.42),materials.villager);robe.position.y=.58;robe.castShadow=true;g.add(robe);
+ const head=new THREE.Mesh(new THREE.BoxGeometry(.48,.48,.46),materials.villagerSkin);head.position.y=1.28;head.castShadow=true;g.add(head);
+ const nose=new THREE.Mesh(new THREE.BoxGeometry(.12,.16,.16),materials.villagerSkin);nose.position.set(0,1.22,-.29);g.add(nose);
+ const eyeMat=new THREE.MeshStandardMaterial({color:0x252b32});
+ for(const ex of [-.12,.12]){const eye=new THREE.Mesh(new THREE.BoxGeometry(.055,.06,.025),eyeMat);eye.position.set(ex,1.33,-.24);g.add(eye);}
+ const belt=new THREE.Mesh(new THREE.BoxGeometry(.64,.12,.44),materials.wood);belt.position.y=.36;g.add(belt);
+ g.position.set(x,0,z);g.userData={kind:'villager',displayName:['Village Guide','Farmer','Trader','Builder'][index%4],homeX:x,homeZ:z,phase:index*1.7};addNpcNameTag(g,g.userData.displayName,1.95);scene.add(g);objects.push(g);villagers.push(g);return g;
+}
+function buildGrasslandVillage(){
+ // A small village in the eastern grassland, away from the spawn point.
+ for(const [x,z] of [[5,-7],[8,-7],[5,-3],[8,-3]])makeHouse(x,z);
+ const well=new THREE.Mesh(new THREE.CylinderGeometry(.65,.72,.45,8),materials.stone);well.position.set(6.5,.22,-5);scene.add(well);objects.push(well);
+ for(const [x,z] of [[4,-5],[7,-9],[9,-5],[6,-2]])spawnVillager(x,z,villagers.length);
+}
+function updateVillagers(dt){
+ for(const v of villagers){
+   v.userData.phase+=dt;
+   const t=v.userData.phase;
+   v.position.x=v.userData.homeX+Math.sin(t*.55)*.65;
+   v.position.z=v.userData.homeZ+Math.cos(t*.42)*.55;
+   v.rotation.y=Math.sin(t*.6)*.25;
+ }
+}
+
+function spawnVillain(x,z){
+ const g=new THREE.Group();
+ const body=new THREE.Mesh(new THREE.BoxGeometry(.72,.95,.52),villainBodyMat);
+ body.position.y=.48;body.castShadow=true;g.add(body);
+ const head=new THREE.Mesh(new THREE.BoxGeometry(.62,.55,.58),villainBodyMat);
+ head.position.y=1.22;head.castShadow=true;g.add(head);
+ for(const ex of [-.16,.16]){
+   const eye=new THREE.Mesh(new THREE.BoxGeometry(.19,.20,.075),villainEyeMat);
+   eye.position.set(ex*1.08,1.29,-.326);g.add(eye);
+   const glint=new THREE.Mesh(new THREE.SphereGeometry(.035,8,6),new THREE.MeshBasicMaterial({color:0xffc4cc}));glint.position.set(ex*1.08-.025,1.33,-.369);g.add(glint);
+ }
+ const hornMat=new THREE.MeshStandardMaterial({color:0x292036,roughness:.5});
+ for(const hx of [-.22,.22]){
+   const horn=new THREE.Mesh(new THREE.ConeGeometry(.12,.28,5),hornMat);
+   horn.position.set(hx,1.62,0);horn.rotation.z=hx<0?.22:-.22;g.add(horn);
+ }
+ g.position.set(x,0,z);g.userData={kind:'villain',displayName:'Shadow Villain',hp:3,phase:Math.random()*6.28,attackCooldown:0,hitCooldown:0};
+ addNpcNameTag(g,g.userData.displayName,2.05);scene.add(g);objects.push(g);villains.push(g);return g;
+}
+
+function spawnNetherKing(x,z){
+ const g=new THREE.Group();
+ const body=new THREE.Mesh(new THREE.BoxGeometry(1.8,2.15,1.25),bossBodyMat);body.position.y=1.35;body.castShadow=true;g.add(body);
+ const head=new THREE.Mesh(new THREE.BoxGeometry(1.35,1.15,1.15),bossBodyMat);head.position.y=3.0;head.castShadow=true;g.add(head);
+ for(const ex of [-.34,.34]){const eye=new THREE.Mesh(new THREE.BoxGeometry(.34,.32,.13),bossEyeMat);eye.position.set(ex,3.08,-.665);g.add(eye);const glint=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),new THREE.MeshBasicMaterial({color:0xffd0d4}));glint.position.set(ex-.055,3.15,-.735);g.add(glint);}
+ for(const hx of [-.52,.52]){const horn=new THREE.Mesh(new THREE.ConeGeometry(.2,.8,5),bossCrownMat);horn.position.set(hx,3.85,0);horn.rotation.z=hx<0?.28:-.28;g.add(horn);}
+ const crown=new THREE.Mesh(new THREE.TorusGeometry(.72,.09,6,8),bossCrownMat);crown.position.y=3.55;crown.rotation.x=Math.PI/2;g.add(crown);
+ const sword=new THREE.Group();
+ const blade=new THREE.Mesh(new THREE.BoxGeometry(.18,1.8,.13),bossCrownMat);blade.position.y=.8;sword.add(blade);
+ const cross=new THREE.Mesh(new THREE.BoxGeometry(.65,.13,.2),new THREE.MeshStandardMaterial({color:0xffd64a,metalness:.8,roughness:.2,emissive:0x5a3500,emissiveIntensity:.6}));cross.position.y=.1;sword.add(cross);
+ sword.position.set(1.15,1.35,-.1);sword.rotation.z=-.25;g.add(sword);
+ g.position.set(x,0,z);g.scale.setScalar(1.45);
+ g.userData={kind:'boss',displayName:'Nether King',hp:10000,maxHp:10000,phase:0,attackCooldown:1.25,hitCooldown:0};
+ addNpcNameTag(g,g.userData.displayName,4.35);scene.add(g);objects.push(g);villains.push(g);netherKing=g;bossHealth=10000;
+ const hp=document.getElementById('bossHP');if(hp)hp.textContent='10000';
+ return g;
+}
+function updateBossHud(){const hp=document.getElementById('bossHP');if(hp)hp.textContent=Math.max(0,bossHealth);const timer=document.getElementById('bossTimer');if(timer&&bossBattleStarted){const sec=Math.floor((performance.now()-bossBattleStarted)/1000);timer.textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}}
+function bossSpecialAttack(b){
+ // A ring of glowing energy orbs signals the King's special attack.
+ const orbMat=new THREE.MeshBasicMaterial({color:0xff2e78});
+ for(let i=0;i<12;i++){const a=i*Math.PI/6;const orb=new THREE.Mesh(new THREE.OctahedronGeometry(.28),orbMat);orb.position.set(b.position.x+Math.cos(a)*2.4,1.1,b.position.z+Math.sin(a)*2.4);scene.add(orb);sparkles.push(orb);orb.userData.bossOrb=true;}
+ velocityY=Math.max(velocityY,4.2);say('NETHER KING: SHADOW BURST! Dodge the attack! 💥');
+}
+
+function removeVillain(v){
+ scene.remove(v);objects=objects.filter(o=>o!==v);villains=villains.filter(o=>o!==v);
+ if(v.userData.kind==='boss'){netherKing=null;bossHealth=0;updateBossHud();say('THE NETHER KING IS DEFEATED! LEGENDARY VICTORY! 👑💎');}
+ else {villainsDefeated++;const counter=document.getElementById('villainsDefeated');if(counter)counter.textContent=villainsDefeated;say('Villain defeated! +1 victory ⭐');}
+}
+function updateVillains(dt){
+ if(playerDead)return;
+ for(const v of [...villains]){
+   if(v.userData.kind==='dragon' && performance.now()-v.userData.spawnedAt>=20*60*1000){removeVillain(v);say('🐉 The Green Dragon fight time is over! Summon it again at night.');continue;}
+   const isBoss=v.userData.kind==='boss'||v.userData.kind==='dragon';
+   const dx=player.x-v.position.x,dz=player.z-v.position.z,dist=Math.hypot(dx,dz);
+   v.userData.phase+=dt*(isBoss?1.6:3.5);
+   v.position.y=Math.sin(v.userData.phase)*(isBoss?.035:.07);
+   if(dist>(isBoss?2.1:1.45) && dist<(isBoss?20:13)){
+     const step=Math.min(dt*(isBoss?1.18:1.05),dist-(isBoss?1.9:1.15));
+     v.position.x+=dx/dist*step;v.position.z+=dz/dist*step;v.rotation.y=Math.atan2(dx,dz);
+   }
+   v.userData.attackCooldown=Math.max(0,v.userData.attackCooldown-dt);
+   if(dist<(isBoss?3.2:1.5) && v.userData.attackCooldown===0){
+     v.userData.attackCooldown=isBoss?1.15:1.6;
+     velocityY=Math.max(velocityY,isBoss?5.6:2.1);
+     lastAttacker=v.userData.displayName||(isBoss?'Nether King':'Shadow Villain');
+     hurtPlayer(isBoss?(v.userData.kind==='dragon'?3:5):2);
+     if(playerDead) return;
+     say(isBoss?(v.userData.kind==='dragon'?'SHADOW DRAGON STRIKE! Dodge its claws! 🐉':`NETHER KING SLAM! ${equippedArmor==='No Armor'?'Jump away!':'Your '+equippedArmor+' helps protect you!'} 💥`):'A villain bumped you! Run or fight! 🏃');
+   }
+   if(isBoss && v.userData.attackCooldown<.15 && dist<13 && Math.random()<.08)bossSpecialAttack(v);
+ }
+}
+function hitVillain(){
+ const origin=camera.position.clone();
+ const direction=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+ const r=new THREE.Raycaster(origin,direction,0,3.2);
+ const hits=r.intersectObjects(villains,true);
+ if(!hits.length){say('No villain in reach! Get closer.');return}
+ let v=hits[0].object;while(v.parent && !villains.includes(v))v=v.parent;
+ if(!villains.includes(v))return;
+ if(v.userData.kind==='boss'||v.userData.kind==='dragon'){
+   if(performance.now()<(v.userData.nextPlayerHitAt||0)){say('The Nether King is resisting! Dodge and strike again!');return;}
+   v.userData.nextPlayerHitAt=performance.now()+650;
+   const bossDamage=Math.max(1,Math.min(v.userData.kind==='dragon'?12:4,Math.ceil(weaponDamage*(v.userData.kind==='dragon'?.65:.25))));v.userData.hp=Math.max(0,v.userData.hp-bossDamage);if(v.userData.kind==='boss'){bossHealth=v.userData.hp;updateBossHud()}
+   v.scale.setScalar(v.userData.kind==='dragon'?1.06:1.52);setTimeout(()=>{if(v.parent)v.scale.setScalar(v.userData.kind==='dragon'?1:1.45)},100);
+   if(v.userData.hp<=0){removeVillain(v);if(v.userData.kind==='dragon'){inventory.diamond=(inventory.diamond||0)+5;inventory.crystal=(inventory.crystal||0)+5;say('GREEN DRAGON DEFEATED! +5 diamonds and +5 crystals! 🐉💎');buildHotbar()}}else say(equippedWeapon+' hit for '+bossDamage+' damage! '+v.userData.displayName+' Hearts: '+v.userData.hp+'/'+v.userData.maxHp);
+ }else{
+   v.userData.hp--;v.scale.setScalar(1.12);setTimeout(()=>{if(v.parent)v.scale.setScalar(1)},90);
+   if(v.userData.hp<=0)removeVillain(v);else say('Hit! Villain health: '+v.userData.hp+'/3');
+ }
+}
+
+function updateHungerHUD(){const el=document.getElementById('hungerHUD');if(!el)return;const count=document.getElementById('hungerCount');el.firstChild.textContent='';let hearts='';for(let i=0;i<maxHunger;i++)hearts+=i<hunger?'🍗':'▫️';el.firstChild.textContent=hearts+' ';if(count)count.textContent=hunger+'/'+maxHunger;}
+function eatFood(){if(playerDead)return;if((inventory.bread||0)>0){inventory.bread--;hunger=Math.min(maxHunger,hunger+3);playerHealth=Math.min(maxPlayerHealth,playerHealth+1);say('You ate bread! Hunger restored. 🍞')}else if((inventory.apple||0)>0){inventory.apple--;hunger=Math.min(maxHunger,hunger+2);say('Crunch! Apple eaten. 🍎')}else{say('No food! Gather wood/leaves or craft food.');return}updateHungerHUD();updateHealthHUD();buildHotbar();}
+function spawnTreasureChest(x,z){const mat=new THREE.MeshStandardMaterial({color:0xb77922,metalness:.28,roughness:.6,emissive:0x3a2100,emissiveIntensity:.2});const chest=new THREE.Mesh(new THREE.BoxGeometry(.9,.72,.8),mat);chest.position.set(x,.36,z);chest.userData={kind:'treasure',displayName:'Treasure Chest',x,y:1,z,type:'treasure'};scene.add(chest);objects.push(chest);}
+function spawnShadowDragon(x,z){if(!netherMode&&!isNight()){say('🐉 The Shadow Dragon can only be summoned at night!');return}if(villains.some(v=>v.userData.kind==='dragon')){say('The Shadow Dragon is already in this world!');return}const g=new THREE.Group();const dark=new THREE.MeshStandardMaterial({color:0x18a83b,roughness:.62,emissive:0x064d19,emissiveIntensity:.28}),wingMat=new THREE.MeshStandardMaterial({color:0x08752b,roughness:.8,side:THREE.DoubleSide}),eye=new THREE.MeshBasicMaterial({color:0xff173d});const body=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.15,2.1),dark);body.position.y=1.5;g.add(body);const head=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.85),dark);head.position.set(0,2.1,-1.25);g.add(head);for(const ex of [-.25,.25]){const e=new THREE.Mesh(new THREE.BoxGeometry(.18,.16,.08),eye);e.position.set(ex,2.18,-1.7);g.add(e)}for(const side of [-1,1]){const wing=new THREE.Mesh(new THREE.BoxGeometry(1.5,.12,1.5),wingMat);wing.position.set(side*1.1,1.95,-.1);wing.rotation.z=side*.25;g.add(wing);const leg=new THREE.Mesh(new THREE.BoxGeometry(.35,.7,.4),dark);leg.position.set(side*.48,.55,.55);g.add(leg)}for(const i of [-1,1]){const horn=new THREE.Mesh(new THREE.ConeGeometry(.16,.55,5),dark);horn.position.set(i*.27,2.55,-1.25);horn.rotation.z=i*.25;g.add(horn)}g.position.set(x,0,z);g.userData={kind:'dragon',displayName:'Green Dragon',hp:3000,maxHp:3000,phase:0,attackCooldown:2,hitCooldown:0,spawnedAt:performance.now(),fightDurationMs:20*60*1000};addNpcNameTag(g,'Green Dragon',3.25);scene.add(g);objects.push(g);villains.push(g);say('THE GREEN DRAGON HAS AWAKENED! ❤️ 3000 hearts! You have 20 minutes to fight! 🐉💚');}
+function updateHealthHUD(){const el=document.getElementById('healthHUD');if(!el)return;el.innerHTML='';for(let i=0;i<maxPlayerHealth;i++){const h=document.createElement('span');h.textContent=i<playerHealth?'❤️':'🖤';h.style.opacity=i<playerHealth?'1':'.48';h.style.fontSize='18px';el.appendChild(h)}count=document.createElement('small');count.id='healthCount';count.textContent=` ${playerHealth}/${maxPlayerHealth}`;count.style.cssText='font-size:12px;color:white;letter-spacing:0;margin-left:6px';el.appendChild(count)}
+function hurtPlayer(baseDamage){if(playerDead)return;const damage=Math.max(1,baseDamage-Math.floor(armorDefense/4));playerHealth=Math.max(0,playerHealth-damage);updateHealthHUD();if(playerHealth<=0){playerDead=true;document.getElementById('deathCause').textContent='You were slain by '+lastAttacker+'.';document.getElementById('deathScreen').style.display='flex';document.exitPointerLock?.();locked=false;}else say(`💥 You took ${damage} damage! Hearts: ${playerHealth}/20`)}
+(document.getElementById('respawnButton')||{addEventListener:function(){}}).addEventListener('click',()=>{playerDead=false;playerHealth=maxPlayerHealth;hunger=maxHunger;updateHungerHUD();player.x=netherMode?-7:0;player.z=netherMode?-5:5;player.y=4;velocityY=0;camera.position.set(player.x,player.y,player.z);updateHealthHUD();document.getElementById('deathScreen').style.display='none';say('Respawned with 20 hearts. Watch out for '+lastAttacker+'!');});
+function clearWorld(){for(const o of objects)scene.remove(o);objects=[];blocks.clear();trees=[];villains=[];villagers=[];netherKing=null;clearScenery()}
+function seeded(n){let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+function buildAncientDungeon(){
+ // Small surface ruin with a shadowy entrance: decorative structure, no extra downloads.
+ const stoneMat=materials.obsidian, trim=new THREE.MeshStandardMaterial({color:0x596575,metalness:.25,roughness:.7}), rune=new THREE.MeshStandardMaterial({color:0x55eaff,emissive:0x087fbb,emissiveIntensity:1.4});
+ const gx=-7,gz=-5;
+ for(let x=0;x<5;x++)for(let z=0;z<5;z++){if(x===0||x===4||z===0||z===4){const wall=new THREE.Mesh(new THREE.BoxGeometry(1,2.2,1),stoneMat);wall.position.set(gx+x,1.1,gz+z);wall.castShadow=false;wall.userData={kind:'block',type:'obsidian',x:gx+x,y:1,z:gz+z};scene.add(wall);objects.push(wall);}}
+ const lintel=new THREE.Mesh(new THREE.BoxGeometry(2.1,.35,.45),trim);lintel.position.set(gx+2,2.25,gz);scene.add(lintel);objects.push(lintel);
+ for(const [x,z] of [[gx+1,gz+1],[gx+3,gz+1],[gx+1,gz+3],[gx+3,gz+3]]){const runeMesh=new THREE.Mesh(new THREE.OctahedronGeometry(.24),rune);runeMesh.position.set(x,1.65,z);scene.add(runeMesh);objects.push(runeMesh);sparkles.push(runeMesh);}
+ const sign=new THREE.Mesh(new THREE.BoxGeometry(1.2,.5,.08),trim);sign.position.set(gx+2,1.55,gz-.56);scene.add(sign);objects.push(sign);
+}
+function makeWorld(seed=Date.now()%100000){netherMode=false;scene.background=new THREE.Color(0x79c9f2);scene.fog.color.set(0x79c9f2);clearWorld();for(let x=-9;x<=9;x++)for(let z=-9;z<=9;z++){let n=seeded((x+30)*91+(z+30)*131+seed),h=Math.sin(x*.36)*.45+Math.cos(z*.31)*.4+(n>.88?.6:0);let top=Math.round(h);for(let y=-3;y<=top;y++){
+ let cave=false;
+ if(y<=-1 && y<top-1){
+   const caveA=Math.sin(x*.62+y*.83+seed*.01)+Math.cos(z*.55-y*.7+seed*.013);
+   const caveB=Math.sin((x+z)*.43+y*.39);
+   cave=(caveA>.95 && caveB>-.2 && Math.hypot(x,z)>2);
+ }
+ if(cave)continue;
+ const isOcean=x>=10;
+ let biome=(x<-2&&z<-2)?'forest':(x<-2&&z>=2)?'swamp':(x>=10)?'ocean':(x>=-1&&x<=2&&z<=-5)?'frostlands':(x>=2&&z<2)?'grassland':'grassland';
+ let blockType=y===top?(biome==='ocean'?'sand':biome==='swamp'?'mud':biome==='frostlands'?'snow':'grass'):y>=top-1?(biome==='swamp'?'mud':biome==='ocean'?'sand':biome==='frostlands'?'ice':'dirt'):'stone';
+ if(y<=-1 && y<top-1){
+   const ore=seeded((x+40)*777+(z+40)*991+(y+12)*1777+seed*3);
+   if(ore>.992)blockType='diamond';
+   else if(ore>.978)blockType='gold';
+   else if(ore>.948)blockType='iron';
+   else if(ore>.91)blockType='copper';
+ }
+ addBlock(x,y,z,blockType);
+ }
+ if(n<.095&&Math.hypot(x,z)>4)addTree(x,z);if(n>.982&&Math.hypot(x,z)>4){let c=new THREE.Mesh(new THREE.OctahedronGeometry(.48),materials.crystal);c.position.set(x,top+1.1,z);c.castShadow=false;c.userData={kind:'crystal',x,y:top+1,z};scene.add(c);objects.push(c)}}// river strip
+for(let z=-9;z<=9;z++){for(let x=3;x<=4;x++){for(let y=-1;y<=2;y++){let m=blocks.get(key(x,y,z));if(m)removeMesh(m)}let w=new THREE.Mesh(new THREE.BoxGeometry(1,.12,1),materials.water);w.position.set(x,-.15,z);w.userData={kind:'water',x,y:0,z};scene.add(w);objects.push(w)}}
+createScenery(seed);
+ // FOREST: extra trees in the northwest biome.
+ for(let i=0;i<18;i++){const x=-13+Math.floor(seeded(seed+i*31)*10),z=-13+Math.floor(seeded(seed+i*47)*10);if(Math.hypot(x,z)>3)addTree(x,z);}
+ // OCEAN: blue water surface, foam-like highlights and scattered islands of sand.
+ for(let x=10;x<=14;x++)for(let z=-9;z<=9;z++){
+   const oldTop=worldTopAt(x,z);
+   if(oldTop!==null){for(let y=Math.floor(oldTop-.5);y>=Math.max(-1,Math.floor(oldTop-.5)-1);y--){const b=blocks.get(key(x,y,z));if(b)removeMesh(b);}}
+   const w=new THREE.Mesh(new THREE.BoxGeometry(1,.18,1),materials.water);w.position.set(x,.75,z);w.userData={kind:'water',x,y:1,z};scene.add(w);objects.push(w);
+ }
+ // SWAMP: dark muddy pools and bright lily pads.
+ const lilyMat=new THREE.MeshStandardMaterial({color:0x4f9b46,roughness:.9});
+ for(const [x,z] of [[-10,5],[-7,8],[-12,10],[-5,12],[-9,13]]){
+   const pond=new THREE.Mesh(new THREE.BoxGeometry(2,.12,2),materials.water);pond.position.set(x,.32,z);scene.add(pond);objects.push(pond);
+   const lily=new THREE.Mesh(new THREE.CylinderGeometry(.28,.32,.06,8),lilyMat);lily.position.set(x,.42,z);scene.add(lily);objects.push(lily);
+ }
+ buildAncientDungeon();
+ spawnTreasureChest(-5,-4);
+ buildGrasslandVillage();
+ // Shadow Villains spawn only after night begins.
+
+ player.x=0;player.z=6;player.y=3;playerHealth=20;hunger=10;hungerClock=0;updateHealthHUD();updateHungerHUD();yaw=0;pitch=0;camera.position.set(player.x,player.y,player.z);camera.rotation.set(0,0,0);inventory={grass:30,dirt:15,stone:12,wood:10,leaves:8,crystal:2,copper:0,iron:0,gold:0,diamond:0,snow:0,ice:0,obsidian:0};mined=0;placed=0;crystals=0;villainsDefeated=0;const vc=document.getElementById('villainsDefeated');if(vc)vc.textContent='0';bossHealth=100;updateBossHud();buildHotbar();say('Block Universe 3.0 is ready! Find the Ancient Dungeon and Frostlands!')}
+function renderCrafting(){const wrap=document.getElementById('craftItems');wrap.innerHTML='';for(const r of recipes){const b=document.createElement('button');b.className='mode';b.style.textAlign='left';b.innerHTML=`${r.emoji} ${r.name}<br><small>${Object.entries(r.cost).map(([k,v])=>`${v} ${k}`).join(' + ')}</small>`;const have=Object.entries(r.cost).every(([k,v])=>(inventory[k]||0)>=v);if(!have){b.style.opacity='.55'}b.onclick=()=>craftRecipe(r.id);wrap.appendChild(b)}updateGearStatus()}
+function craftRecipe(id){const r=recipes.find(item=>item.id===id);if(!r)return;if(!Object.entries(r.cost).every(([k,v])=>(inventory[k]||0)>=v)){say(`Not enough materials! ${r.name} needs `+Object.entries(r.cost).map(([k,v])=>`${v} ${k}`).join(' + ')+'.');return;}for(const [k,v] of Object.entries(r.cost))inventory[k]-=v;crafted[r.id]=true;if(r.type==='weapon'){equippedWeapon=r.name;weaponDamage=r.power;say('Equipped '+r.name+'! Damage: '+weaponDamage)}if(r.type==='bed'){placeBed();crafted[r.id]=false;}if(r.type==='food'){if(r.id==='bread')inventory.bread=(inventory.bread||0)+3;else inventory.apple=(inventory.apple||0)+3;crafted[r.id]=false;say('Food prepared! Press E to eat.');}if(r.type==='tool'){equippedTool=r.name;say('Crafted '+r.name+'! Mining upgrade ready.')}if(r.type==='armor'){equippedArmor=r.name;armorDefense=r.power;say('Equipped '+r.name+'! Armor protection upgraded.')}buildHotbar();renderCrafting();updateGearStatus()}
+
+let playerBed=null;
+function placeBed(){
+ const x=Math.round(player.x-Math.sin(yaw)*1.8),z=Math.round(player.z-Math.cos(yaw)*1.8),y=0;
+ const frameMat=new THREE.MeshStandardMaterial({color:0x80502e,roughness:1});const blanketMat=new THREE.MeshStandardMaterial({color:0xb92f45,roughness:.9});const pillowMat=new THREE.MeshStandardMaterial({color:0xe7e9f2,roughness:.9});
+ const parts=[];const base=new THREE.Mesh(new THREE.BoxGeometry(1.6,.22,.82),frameMat);base.position.set(x,y+.2,z);scene.add(base);parts.push(base);
+ const mattress=new THREE.Mesh(new THREE.BoxGeometry(1.5,.18,.76),blanketMat);mattress.position.set(x,y+.39,z);scene.add(mattress);parts.push(mattress);
+ const pillow=new THREE.Mesh(new THREE.BoxGeometry(.32,.13,.62),pillowMat);pillow.position.set(x-.53,y+.53,z);scene.add(pillow);parts.push(pillow);
+ for(const dx of [-.62,.62])for(const dz of [-.28,.28]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.12,.2,.12),frameMat);leg.position.set(x+dx,y+.08,z+dz);scene.add(leg);parts.push(leg)}
+ playerBed={x,y,z,parts};const b=document.getElementById('sleepButton');if(b)b.style.display='block';say('Another bed built! You can craft as many beds as you can afford. Open Craft and press Sleep in Bed to rest. 🛏️');
+}
+function sleepInBed(){if(!playerBed){say('Build a bed first! Craft it with 5 wood + 3 leaves.');return;}if(playerDead){say('You cannot sleep while defeated.');return;}if(Math.hypot(player.x-playerBed.x,player.z-playerBed.z)>4){say('Move closer to your bed to sleep.');return;}
+ const curtain=document.createElement('div');curtain.style.cssText='position:fixed;inset:0;background:#050812;opacity:0;z-index:35;pointer-events:none;transition:opacity .35s';document.body.appendChild(curtain);requestAnimationFrame(()=>curtain.style.opacity='1');setTimeout(()=>{worldTime= Math.PI/(.09);playerHealth=maxPlayerHealth;hunger=maxHunger;hungerClock=0;updateHealthHUD();updateHungerHUD();curtain.style.opacity='0';setTimeout(()=>curtain.remove(),400);say('Good morning! You slept safely. Health and hunger restored! ☀️');},450);
+}
+(document.getElementById('sleepButton')||{addEventListener:function(){}}).addEventListener('click',sleepInBed);
+(document.getElementById('buildBedCraft')||{addEventListener:function(){}}).addEventListener('click',()=>craftRecipe('bed'));
+function updateGearStatus(){const mini=document.getElementById('gearMini');if(mini)mini.textContent=equippedWeapon;const el=document.getElementById('gearStatus');if(el)el.textContent=`Weapon: ${equippedWeapon} (${weaponDamage} damage) · Tool: ${equippedTool} · Armor: ${equippedArmor}`}
+function enterNether(){if(netherMode)return;netherMode=true;scene.background=new THREE.Color(0x8b101d);scene.fog.color.set(0x8b101d);clearWorld();const rock=materials.netherrack;for(let x=-9;x<=9;x++)for(let z=-9;z<=9;z++){let h=Math.round(Math.sin((x+netherWorldSeed*.001)*.43)*.8+Math.cos((z-netherWorldSeed*.001)*.36)*.7);for(let y=-2;y<=h;y++){let type='netherrack';if(y===h&&((x*7+z*11)%9===0))type='quartz';if(y<=-1){let n=seeded((x+20)*333+(z+20)*777+y*111+netherWorldSeed);if(n>.985)type='gold';else if(n>.955)type='iron';}addBlock(x,y,z,type)}if((x+z*2)%17===0&&Math.hypot(x,z)>4){const lava=new THREE.Mesh(new THREE.BoxGeometry(1,.13,1),materials.lava);lava.position.set(x,.05,z);lava.userData={kind:'water',x,y:0,z};scene.add(lava);objects.push(lava)}}
+// Glowing red Nether sky and tall basalt-like spires.
+scene.background=new THREE.Color(0x260b18);scene.fog.color.set(0x260b18);for(let i=0;i<16;i++){let h=3+seeded(i*9+3+netherWorldSeed)*7;let sp=new THREE.Mesh(new THREE.ConeGeometry(.8+seeded(i+netherWorldSeed)*.7,h,5),new THREE.MeshStandardMaterial({color:0x39252c,roughness:1}));sp.position.set(-12+seeded(i*13+netherWorldSeed)*24,h/2,-12+seeded(i*17+netherWorldSeed)*24);addScenery(sp)}player.x=-7;player.z=-5;player.y=4;camera.position.set(player.x,player.y,player.z);camera.rotation.set(0,0,0);spawnNetherKing(7,7);const btn=document.getElementById('netherToggle');btn.textContent='🌿 Return Overworld';say('Welcome to the NETHER! Find the Nether King at the far side!');}
+function leaveNether(){if(!netherMode)return;netherMode=false;const saved={...inventory};makeWorld();inventory=saved;scene.background=new THREE.Color(0x79c9f2);scene.fog.color.set(0x79c9f2);const btn=document.getElementById('netherToggle');btn.textContent='🔥 Enter Nether';buildHotbar();say('Back in the Overworld! Your ores and crafted gear are safe.')}
+function buildHotbar(){const el=document.getElementById('hotbar');el.innerHTML='';defs.forEach(([id,emoji,name],i)=>{let b=document.createElement('button');b.className='slot'+(selected===id?' active':'');b.innerHTML=`<em>${inventory[id]||0}</em><span>${emoji}</span><small>${i+1} ${name}</small>`;b.onclick=()=>{selected=id;buildHotbar()};el.appendChild(b)})}
+function say(s){toastEl.textContent=s;toastEl.classList.add('show');clearTimeout(say.timer);say.timer=setTimeout(()=>toastEl.classList.remove('show'),1700)}
+function setMode(m){mode=m;document.getElementById('modeText').textContent=m.toUpperCase();document.getElementById('playMode').classList.toggle('active',m==='play');document.getElementById('buildMode').classList.toggle('active',m==='build');say(m==='build'?'Build mode: right-click to place blocks.':'Play mode: left-click to mine blocks.')}
+function updateStats(){document.getElementById('mined').textContent=mined;document.getElementById('placed').textContent=placed;document.getElementById('crystals').textContent=crystals}
+(document.getElementById('playMode')||{}).onclick=()=>setMode('play');(document.getElementById('buildMode')||{}).onclick=()=>setMode('build');
+(document.getElementById('save')||{}).onclick=()=>{let data={inventory,selected,mode,mined,placed,crystals,player:{x:player.x,y:player.y,z:player.z},blocks:[...blocks.values()].map(m=>m.userData)};try{localStorage.setItem('blockUniverse2EpicAdventure',JSON.stringify(data));say('Saved! Your world is in this browser.')}catch(e){say('Save did not work in this browser.')}};
+(document.getElementById('newWorld')||{}).onclick=()=>{if(confirm('Create a new world? Save first if you want to keep this one.')){netherMode=false;makeWorld();scene.background=new THREE.Color(0x79c9f2);scene.fog.color.set(0x79c9f2);document.getElementById('netherToggle').textContent='🔥 Enter Nether'}};
+(document.getElementById('craftToggle')||{}).onclick=()=>{const panel=document.getElementById('craftPanel');panel.style.display=panel.style.display==='none'?'block':'none';renderCrafting()};(document.getElementById('closeCraft')||{}).onclick=()=>document.getElementById('craftPanel').style.display='none';(document.getElementById('netherToggle')||{}).onclick=()=>netherMode?leaveNether():enterNether();(document.getElementById('dragonToggle')||{}).onclick=()=>spawnShadowDragon(player.x+5,player.z-7);
+function loadSave(){try{let s=JSON.parse(localStorage.getItem('blockUniverse2EpicAdventure'));if(!s||!s.blocks)return false;clearWorld();s.blocks.forEach(b=>addBlock(b.x,b.y,b.z,b.type));createScenery(Date.now()%100000);inventory=s.inventory||inventory;selected=s.selected||selected;mode=s.mode||'play';mined=s.mined||0;placed=s.placed||0;crystals=s.crystals||0;if(s.player)Object.assign(player,s.player);buildHotbar();setMode(mode);return true}catch(e){return false}}
+function target(){raycaster.setFromCamera(new THREE.Vector2(0,0),camera);return raycaster.intersectObjects(objects,false)[0]||null}
+const miningEffects=[];
+function playMiningAnimation(o){
+ const p=o.position.clone();
+ // A brief dark crack pattern flashes over the block while glowing chips burst outward.
+ const crackMat=new THREE.LineBasicMaterial({color:0x080b10,transparent:true,opacity:.95,depthTest:true});
+ const pts=[new THREE.Vector3(-.42,.32,.515),new THREE.Vector3(-.12,.08,.515),new THREE.Vector3(-.24,-.18,.515),new THREE.Vector3(.08,-.02,.515),new THREE.Vector3(.38,-.34,.515)];
+ const geo=new THREE.BufferGeometry().setFromPoints(pts);const crack=new THREE.Line(geo,crackMat);crack.position.copy(p);scene.add(crack);
+ const chipMat=new THREE.MeshBasicMaterial({color:0x9cecff});
+ for(let i=0;i<7;i++){const chip=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.07),chipMat);chip.position.copy(p);chip.position.x+=(Math.random()-.5)*.5;chip.position.y+=(Math.random()-.5)*.5;chip.position.z+=(Math.random()-.5)*.5;scene.add(chip);miningEffects.push({mesh:chip,life:.32,vx:(Math.random()-.5)*3,vy:1+Math.random()*2,vz:(Math.random()-.5)*3,chip:true});}
+ miningEffects.push({mesh:crack,life:.28,crack:true});
+ o.scale.set(.88,1.12,.88);setTimeout(()=>{if(o.parent)o.scale.set(1,1,1)},90);
+}
+function mine(){const hit=target();if(!hit){say('Aim at a block first!');return}const o=hit.object,u=o.userData;if(Math.hypot(u.x-player.x,u.z-player.z)>6){say('Move closer to that block!');return}playMiningAnimation(o);if(u.kind==='treasure'){inventory.diamond=(inventory.diamond||0)+2;inventory.gold=(inventory.gold||0)+3;inventory.crystal=(inventory.crystal||0)+2;scene.remove(o);objects=objects.filter(x=>x!==o);say('Treasure chest opened! +2 diamonds, +3 gold, +2 crystals! 💎')}else if(u.kind==='crystal'){crystals++;inventory.crystal=(inventory.crystal||0)+1;scene.remove(o);objects=objects.filter(x=>x!==o);say('Magic crystal found! ✨')}
+ else if(['copper','iron','gold','diamond','quartz','snow','ice','obsidian'].includes(u.type)){inventory[u.type]=(inventory[u.type]||0)+1;removeMesh(o);say('Mined '+u.type.toUpperCase()+' ore! ⛏️')}else if(u.kind==='tree'){inventory.wood=(inventory.wood||0)+2;inventory.leaves=(inventory.leaves||0)+1;inventory.apple=(inventory.apple||0)+1;scene.remove(o);objects=objects.filter(x=>x!==o);say('Collected wood and leaves!')}else if(u.kind==='water'){say('Water is too slippery to mine!');return}else{inventory[u.type]=(inventory[u.type]||0)+1;removeMesh(o);say('Mined '+u.type+' block!')}mined++;buildHotbar();updateStats()}
+function place(){const hit=target();if(!hit){say('Aim at a block face to build!');return}if((inventory[selected]||0)<=0){say('No '+selected+' blocks left. Mine some first!');return}let n=hit.face.normal.clone().transformDirection(hit.object.matrixWorld);let p=hit.object.position.clone().add(n);let x=Math.round(p.x),y=Math.round(p.y),z=Math.round(p.z);if(y>9||y< -5||Math.hypot(x-player.x,z-player.z)<1.4){say('There is no room to place that block!');return}if(blocks.has(key(x,y,z))){say('That space is already filled!');return}addBlock(x,y,z,selected);sendNet({type:'block',action:'add',x,y,z,blockType:selected});inventory[selected]--;placed++;buildHotbar();updateStats()}
+
+// Multiplayer: Trystero WebRTC rooms. A player can enter a room alone; others may join later.
+let peer=null, hostConn=null, connections=[], remotePlayers=new Map(), netReady=false, netTimer=0;
+let trysteroRoom=null, netSendAction=null, netModule=null, currentRoomCode='';
+let playerDisplayName=(()=>{try{return localStorage.getItem('bu3PlayerName')||'Explorer'}catch(e){return 'Explorer'}})();
+const skinPresets={neon:{name:'Neon Gamer',head:'#b6ff00',body:'#21b95b',legs:'#182638'},shadow:{name:'Shadow Knight',head:'#d7dbe8',body:'#28243f',legs:'#090b12'},dragon:{name:'Dragon Slayer',head:'#ffb16b',body:'#b52b2b',legs:'#431b24'},ninja:{name:'Ninja',head:'#f0d0b0',body:'#171923',legs:'#292d3a'},frost:{name:'Frost Warrior',head:'#d8f5ff',body:'#45bde8',legs:'#e7f8ff'},gold:{name:'Gold Hero',head:'#ffe2a6',body:'#d99d18',legs:'#60431a'}};
+let playerSkin=(()=>{try{return JSON.parse(localStorage.getItem('bu3CustomSkin'))||{...skinPresets.neon}}catch(e){return {...skinPresets.neon}}})();
+function applySkinToAvatar(avatar,skin){if(!avatar||!skin)return;const mats=avatar.userData.skinMats;if(mats){mats.head.color.set(skin.head||'#ffd4b0');mats.body.color.set(skin.body||'#ff8a55');mats.legs.color.set(skin.legs||'#243246');if(mats.glow)mats.glow.color.set(skin.body||'#ff8a55');}}
+let powerUntil=0, dragonRideOn=false;
+function activateSuperpower(){playerHealth=maxPlayerHealth;updateHealthHUD();powerUntil=performance.now()+30000;armorDefense=Math.max(armorDefense,40);say('⚡ SUPERPOWER ACTIVATED! Full health and extra protection for 30 seconds!');}
+function equipLegendaryArmor(){equippedArmor='Legendary Dragon Armor';armorDefense=40;playerHealth=maxPlayerHealth;updateHealthHUD();updateGearStatus();say('🛡️ LEGENDARY DRAGON ARMOR EQUIPPED! Damage protection upgraded!');}
+function rideGreenDragon(){let d=villains.find(v=>v.userData.kind==='dragon');if(!d){spawnShadowDragon(player.x+3,player.z-4);d=villains.find(v=>v.userData.kind==='dragon');}if(!d)return;dragonRideOn=!dragonRideOn;const b=document.getElementById('rideDragonBtn');if(b)b.textContent=dragonRideOn?'🐉 Dismount Dragon':'🐉 Ride Dragon';if(dragonRideOn){player.x=d.position.x;player.z=d.position.z;player.y=5;velocityY=0;say('🐉 You are riding the Green Dragon! Use WASD to fly around; click Ride Dragon again to dismount.');}else{player.y=3;say('You dismounted the Green Dragon.');}}
+document.getElementById('rideDragonBtn')?.addEventListener('click',rideGreenDragon);
+document.getElementById('powerBtn')?.addEventListener('click',activateSuperpower);
+document.getElementById('legendArmorBtn')?.addEventListener('click',equipLegendaryArmor);
+document.getElementById('superBossBtn')?.addEventListener('click',()=>{if(!netherMode){say('👑 Enter the Nether first, then summon the 10,000-heart Nether King!');return;}if(netherKing&&netherKing.parent){say('The Nether King is already here!');return;}spawnNetherKing(player.x+5,player.z-5);say('👑 THE NETHER KING HAS 10,000 HEARTS!');});
+function updateSkinPreview(){const h=document.getElementById('skinHead').value,b=document.getElementById('skinBody').value,l=document.getElementById('skinLegs').value;document.getElementById('previewHead').style.background=h;document.getElementById('previewBody').style.background=b;document.getElementById('previewLegs').style.background=l;document.getElementById('skinName').textContent=playerSkin.name||'Custom Skin';}
+function chooseSkin(key){const s=skinPresets[key];if(!s)return;playerSkin={...s};document.getElementById('skinHead').value=s.head;document.getElementById('skinBody').value=s.body;document.getElementById('skinLegs').value=s.legs;updateSkinPreview();}
+function savePlayerSkin(){playerSkin={name:playerSkin.name||'Custom Skin',head:document.getElementById('skinHead').value,body:document.getElementById('skinBody').value,legs:document.getElementById('skinLegs').value};try{localStorage.setItem('bu3CustomSkin',JSON.stringify(playerSkin));}catch(e){}updateSkinPreview();if(selfAvatar)applySkinToAvatar(selfAvatar,playerSkin);sendNet({type:'skin',id:peer&&peer.id,skin:playerSkin});say('Skin saved and applied! Your friends can see it when connected. 🎨');}
+function savePlayerDisplayName(){const field=document.getElementById('customPlayerName');const clean=(field.value||'').replace(/[<>\\]/g,'').trim().slice(0,18);if(!clean){say('Please enter a name first.');return;}playerDisplayName=clean;try{localStorage.setItem('bu3PlayerName',playerDisplayName)}catch(e){}if(selfAvatar){const old=selfAvatar.userData.nameTag;if(old){selfAvatar.remove(old);if(old.material&&old.material.map)old.material.map.dispose();if(old.material)old.material.dispose()}addNpcNameTag(selfAvatar,playerDisplayName,2.15)}sendNet({type:'rename',id:peer&&peer.id,name:playerDisplayName});say('Your character is now named '+playerDisplayName+'! 🏷️');}
+document.getElementById('savePlayerName').addEventListener('click',savePlayerDisplayName);document.getElementById('customPlayerName').addEventListener('keydown',e=>{if(e.key==='Enter')savePlayerDisplayName()});document.getElementById('customPlayerName').value=playerDisplayName;
+
+const netStatus=document.getElementById('netStatus');
+function setNetStatus(t){if(netStatus)netStatus.textContent=t;}
+function makeAvatar(color=0xff8a55){
+ const g=new THREE.Group();
+ const bodyMat=new THREE.MeshStandardMaterial({color,roughness:.7});
+ const headMat=new THREE.MeshStandardMaterial({color:0xffd4b0,roughness:.8});
+ const legsMat=new THREE.MeshStandardMaterial({color:0x243246,roughness:.8});
+ const faceMat=new THREE.MeshBasicMaterial({color:0x101820});
+ const mouthMat=new THREE.MeshBasicMaterial({color:0x531d25});
+ const body=new THREE.Mesh(new THREE.BoxGeometry(.55,.62,.32),bodyMat);body.position.y=.04;g.add(body);
+ const neck=new THREE.Mesh(new THREE.BoxGeometry(.18,.12,.18),headMat);neck.position.y=.38;g.add(neck);
+ const headGroup=new THREE.Group();headGroup.position.set(0,.58,0);g.add(headGroup);
+ const head=new THREE.Mesh(new THREE.BoxGeometry(.48,.44,.42),headMat);headGroup.add(head);
+ // Face points toward -Z; features are attached to the head so they move with it.
+ const eyes=[];for(const ex of [-.105,.105]){const eye=new THREE.Mesh(new THREE.BoxGeometry(.078,.078,.026),faceMat);eye.position.set(ex,.045,-.218);headGroup.add(eye);eyes.push(eye)}
+ const mouth=new THREE.Mesh(new THREE.BoxGeometry(.13,.035,.026),mouthMat);mouth.position.set(0,-.105,-.22);headGroup.add(mouth);
+ // Limb pivots are placed at shoulders/hips, not at the centre of each limb.
+ const arms=[];for(const side of [-1,1]){const pivot=new THREE.Group();pivot.position.set(side*.36,.27,0);g.add(pivot);const arm=new THREE.Mesh(new THREE.BoxGeometry(.17,.43,.20),bodyMat);arm.position.y=-.215;pivot.add(arm);const hand=new THREE.Mesh(new THREE.BoxGeometry(.18,.16,.21),headMat);hand.position.y=-.48;pivot.add(hand);arms.push(pivot)}
+ const legs=[];for(const side of [-1,1]){const pivot=new THREE.Group();pivot.position.set(side*.14,-.25,0);g.add(pivot);const leg=new THREE.Mesh(new THREE.BoxGeometry(.20,.38,.25),legsMat);leg.position.y=-.19;pivot.add(leg);const foot=new THREE.Mesh(new THREE.BoxGeometry(.21,.12,.31),legsMat);foot.position.set(0,-.39,-.035);pivot.add(foot);legs.push(pivot)}
+ const glow=new THREE.PointLight(color,.18,1.6);glow.position.y=.25;g.add(glow);
+ g.userData.skinMats={body:bodyMat,head:headMat,legs:legsMat,glow};
+ g.userData.limbs={arms,legs,eyes,mouth,headGroup,walkPhase:Math.random()*6,moving:false,lastX:null,lastZ:null,targetX:0,targetY:0,targetZ:0,baseY:0,blinkAt:performance.now()+1800+Math.random()*3500,blinkUntil:0};
+ scene.add(g);return g;
+}
+let selfView=false, selfAvatar=null;
+function toggleSelfView(){selfView=!selfView;const b=document.getElementById('selfViewToggle');if(b){b.textContent=selfView?'👤 Self View: ON':'👤 Self View: OFF';b.classList.toggle('active',selfView);}if(selfAvatar){selfAvatar.visible=selfView;applySkinToAvatar(selfAvatar,playerSkin);}say(selfView?'Self View ON! You can see your own skin. Press V to switch back.':'Self View OFF. Back to first-person view.');}
+function onNetData(data, conn){
+ if(!data||typeof data!=='object')return;
+ if(data.type==='hello'){
+   if(data.id && data.id!==peer?.id && !remotePlayers.has(data.id)){const avatar=makeAvatar();addNpcNameTag(avatar,data.name||'Friend',2.15);remotePlayers.set(data.id,{avatar,name:data.name||'Friend'});}
+   if(data.id && data.skin){const r=remotePlayers.get(data.id);if(r){r.skin=data.skin;applySkinToAvatar(r.avatar,data.skin);}}
+   // Send our current player state to the newcomer and let the host relay the hello to other guests.
+   sendNet({type:'world',id:peer&&peer.id,position:{x:player.x,y:player.y,z:player.z,yaw:yaw,skin:playerSkin,name:playerDisplayName}})
+   
+ }
+ if(data.type==='pos'&&data.id&&data.id!==peer?.id){let r=remotePlayers.get(data.id);if(!r){r={avatar:makeAvatar(),name:data.name||'Friend'};addNpcNameTag(r.avatar,r.name,2.15);remotePlayers.set(data.id,r)}const av=r.avatar;const ud=av.userData.limbs;if(ud){ud.targetX=Number(data.x)||0;ud.targetY=(Number(data.y)||0)-1;ud.targetZ=Number(data.z)||0;if(ud.lastX!==null){const dx=data.x-ud.lastX,dz=data.z-ud.lastZ;ud.moving=(dx*dx+dz*dz)>.00012;}ud.lastX=data.x;ud.lastZ=data.z;}av.rotation.y=Number(data.yaw)||0;if(data.name&&data.name!==r.name){r.name=data.name;const oldTag=av.userData.nameTag;if(oldTag){av.remove(oldTag);if(oldTag.material&&oldTag.material.map)oldTag.material.map.dispose();if(oldTag.material)oldTag.material.dispose()}addNpcNameTag(av,r.name,2.15)}if(data.skin){r.skin=data.skin;applySkinToAvatar(av,data.skin)}}
+ if(data.type==='rename'&&data.id&&data.id!==peer?.id){let r=remotePlayers.get(data.id);if(!r){r={avatar:makeAvatar(),name:data.name||'Friend'};remotePlayers.set(data.id,r)}r.name=data.name||'Friend';const old=r.avatar.userData.nameTag;if(old){r.avatar.remove(old);if(old.material&&old.material.map)old.material.map.dispose();if(old.material)old.material.dispose()}addNpcNameTag(r.avatar,r.name,2.15);}
+ if(data.type==='skin'&&data.id&&data.id!==peer?.id){let r=remotePlayers.get(data.id);if(!r){r={avatar:makeAvatar(),name:'Friend'};addNpcNameTag(r.avatar,r.name,2.15);remotePlayers.set(data.id,r)}r.skin=data.skin;applySkinToAvatar(r.avatar,data.skin);}
+ if(data.type==='block' && data.action==='add'){if(!blocks.has(key(data.x,data.y,data.z)))addBlock(data.x,data.y,data.z,data.blockType,false);}
+ if(data.type==='block' && data.action==='remove'){const m=blocks.get(key(data.x,data.y,data.z));if(m)removeMesh(m);}
+ if(data.type==='world' && data.position && data.id!==peer?.id){let r=remotePlayers.get(data.id);if(!r){r={avatar:makeAvatar(),name:data.position.name||'Friend'};addNpcNameTag(r.avatar,r.name,2.15);remotePlayers.set(data.id,r)}r.name=data.position.name||r.name;const old=r.avatar.userData.nameTag;if(old){r.avatar.remove(old);if(old.material&&old.material.map)old.material.map.dispose();if(old.material)old.material.dispose()}addNpcNameTag(r.avatar,r.name,2.15);const ud=r.avatar.userData.limbs;ud.targetX=data.position.x;ud.targetY=data.position.y-1;ud.targetZ=data.position.z;r.avatar.rotation.y=data.position.yaw||0;if(data.position.skin){r.skin=data.position.skin;applySkinToAvatar(r.avatar,data.position.skin)}}
+}
+
+function sendNet(msg){if(!trysteroRoom||!netSendAction)return;try{netSendAction.send(msg)}catch(e){console.warn('Trystero send failed',e);setNetStatus('Network send failed. Check internet and try again.');}}
+function relayNet(data, except){} // Trystero broadcasts directly to every room peer.
+async function resetPeer(){if(trysteroRoom){try{await trysteroRoom.leave()}catch(e){}}trysteroRoom=null;netSendAction=null;peer=null;hostConn=null;connections=[];netReady=false;remotePlayers.forEach(r=>{if(r.avatar)scene.remove(r.avatar)});remotePlayers.clear();}
+function normalizeRoomCode(value){return (value||'').trim().replace(/\s+/g,'').toLowerCase();}
+async function enterPublicRoom(createMode){
+ const field=document.getElementById('roomCode');let code=normalizeRoomCode(field.value);
+ if(!code)code='block-universe-public';
+ if(!/^[a-z0-9_-]{3,50}$/.test(code)){setNetStatus('Use 3–50 letters, numbers, hyphens or underscores for your room code.');return;}
+ await resetPeer();currentRoomCode=code;field.value=code;setNetStatus('Loading free Trystero multiplayer…');
+ try{
+   if(!netModule){try{netModule=await import('https://esm.sh/trystero');}catch(firstImportError){console.warn('Primary Trystero CDN failed; trying fallback',firstImportError);netModule=await import('https://esm.run/trystero');}}
+   const {joinRoom,selfId}=netModule;
+   peer={id:selfId};
+   trysteroRoom=joinRoom({appId:'block-universe-3-next-evolution-public-lobby'},code);
+   netSendAction=trysteroRoom.makeAction('blockUniversePacket');
+   netSendAction.onMessage=(data, metadata)=>{try{onNetData(data,metadata||{})}catch(e){console.error('Multiplayer packet error',e);setNetStatus('Connected, but a game update failed.');}};
+   trysteroRoom.onPeerJoin=(peerId)=>{
+     netReady=true;setNetStatus('✅ In room “'+code+'”. Playing solo is fine—waiting for other players to join!');
+     sendNet({type:'hello',id:peer.id,name:playerDisplayName,skin:playerSkin});
+     sendNet({type:'world',id:peer.id,position:{x:player.x,y:player.y,z:player.z,yaw:yaw,skin:playerSkin,name:playerDisplayName}});
+   };
+   trysteroRoom.onPeerLeave=(peerId)=>{const r=remotePlayers.get(peerId);if(r&&r.avatar)scene.remove(r.avatar);remotePlayers.delete(peerId);setNetStatus('A player left. You can keep playing while waiting for others.');};
+   netReady=true;setNetStatus('🌍 Joined room “'+code+'”. You can play alone now; others can join with this same code.');
+   sendNet({type:'hello',id:peer.id,name:playerDisplayName,skin:playerSkin});
+   document.getElementById('roomCode').value=code;
+ }catch(e){console.error('Trystero startup failed',e);const detail=(e&&e.message)||String(e)||'unknown error';const hint=/fetch|network|import|module|load|cors/i.test(detail)?' The multiplayer library could not load from either CDN. Try opening this file while online, reload once, or check whether a browser extension/network filter blocks esm.sh or esm.run.':' Check the room code and reload. Technical detail: '+detail;setNetStatus('❌ Multiplayer could not start.'+hint);await resetPeer();}
+}
+(document.getElementById('hostRoom')||{}).onclick=()=>enterPublicRoom(true);
+(document.getElementById('joinRoom')||{}).onclick=()=>enterPublicRoom(false);
+(document.getElementById('selfViewToggle')||{}).addEventListener('click',toggleSelfView);
+document.addEventListener('keydown',e=>{if(e.code==='KeyV'&&!e.repeat&&overlay.dataset.started==='yes'&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){toggleSelfView();}});
+(document.getElementById('skinToggle')||{}).onclick=()=>{const p=document.getElementById('skinPanel');p.style.display=p.style.display==='none'?'block':'none';updateSkinPreview();};
+(document.getElementById('closeSkin')||{}).onclick=()=>document.getElementById('skinPanel').style.display='none';
+(document.getElementById('saveSkin')||{}).onclick=savePlayerSkin;
+document.querySelectorAll('#skinPresets [data-skin]').forEach(b=>b.addEventListener('click',()=>chooseSkin(b.dataset.skin)));
+['skinHead','skinBody','skinLegs'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{playerSkin.name='Custom Skin';updateSkinPreview();}));
+updateSkinPreview();
+
+document.addEventListener('contextmenu',e=>e.preventDefault());renderer.domElement.addEventListener('mousedown',e=>{if(!locked)return;if(e.button===0){const vhit=new THREE.Raycaster();vhit.setFromCamera(new THREE.Vector2(0,0),camera);const vh=vhit.intersectObjects(villains,true);if(vh.length)hitVillain();else if(mode==='play')mine();else place()}if(e.button===2){place()}});
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.key>='1'&&e.key<='6'){selected=defs[Number(e.key)-1][0];buildHotbar()}if(e.key.toLowerCase()==='f')hitVillain();if(e.key.toLowerCase()==='e')eatFood();if(e.key.toLowerCase()==='b')setMode('build');if(e.key.toLowerCase()==='p')setMode('play');if(e.key.toLowerCase()==='q')activateSuperpower()});document.addEventListener('keyup',e=>keys[e.code]=false);
+document.addEventListener('mousemove',e=>{if(!locked)return;yaw-=e.movementX*.0022;pitch-=e.movementY*.0022;pitch=Math.max(-1.35,Math.min(1.35,pitch));camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch});
+renderer.domElement.addEventListener('click',()=>{
+ if(!locked){try{const p=renderer.domElement.requestPointerLock();if(p&&p.catch)p.catch(()=>{});}catch(e){}}
+ // Clicking the world aims at the center of the screen; use F as a backup attack.
+ if(overlay.dataset.started==='yes' && mode==='play'){
+   const ray=new THREE.Raycaster(camera.position,new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion),0,7);
+   const hits=ray.intersectObjects(villains,true);
+   if(hits.length)hitVillain();
+ }
+});
+document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===renderer.domElement;if(locked){overlay.classList.add('hidden');overlay.style.setProperty('display','none','important');}else if(overlay.dataset.started!=='yes'&&!overlay.classList.contains('hidden')){overlay.style.display='flex';}else{overlay.classList.add('hidden');overlay.style.setProperty('display','none','important');}});
+document.addEventListener('pointerlockerror',()=>{locked=false;if(overlay.dataset.started==='yes'){overlay.style.display='none';say('World entered! WASD move • Mouse/trackpad look • Click villains to attack • F attacks • Esc releases pointer.');}});
+function enterBlockUniverse(){
+ const overlay=document.getElementById('overlay');
+ if(!overlay)return;
+ if(overlay.dataset.started==='yes'){overlay.classList.add('hidden');overlay.style.display='none';return;}
+ if(window.__worldGenerating)return;
+ if(!window.__worldGenerationDone){
+   window.__worldGenerating=true;
+   const curtain=document.getElementById('genCurtain'),fill=document.getElementById('genFill'),words=document.getElementById('genWords');
+   if(curtain)curtain.style.display='flex';
+   overlay.classList.add('hidden');overlay.style.display='none';
+   const phrases=['Growing forests and frostlands…','Carving caves…','Scattering rare ores…','Waking the villagers…','Lighting the Nether…','Your world is ready!'];
+   const began=Date.now();
+   function tickGen(){
+     const p=Math.min(1,(Date.now()-began)/6000);
+     if(fill)fill.style.width=(p*100)+'%';
+     if(words)words.textContent=phrases[Math.min(5,Math.floor(p*6))];
+     if(p<1){requestAnimationFrame(tickGen);return;}
+     window.__worldGenerationDone=true;window.__worldGenerating=false;
+     if(curtain)curtain.style.display='none';
+     enterBlockUniverse();
+   }
+   requestAnimationFrame(tickGen);return;
+ }
+ overlay.dataset.started='yes';
+ overlay.classList.add('hidden');overlay.style.display='none';overlay.style.pointerEvents='none';
+ const status=document.getElementById('startStatus');if(status)status.style.display='none';
+ try{const result=renderer.domElement.requestPointerLock();if(result&&typeof result.catch==='function')result.catch(()=>{locked=false;overlay.classList.add('hidden');overlay.style.display='none';say('World entered! WASD move • Mouse/trackpad look • Click villains to attack • F attacks • Esc releases pointer.');});}
+ catch(err){locked=false;overlay.classList.add('hidden');overlay.style.display='none';say('World entered! WASD move • Mouse/trackpad look • Click villains to attack • F attacks • Esc releases pointer.');}
+}
+const startButton=document.getElementById('start');
+if(startButton)startButton.addEventListener('click',enterBlockUniverse);
+
+let lastEndlessShift=0;
+function keepWorldEndless(){
+ if(Math.abs(player.x)<10 && Math.abs(player.z)<10)return;
+ const now=performance.now();if(now-lastWorldShift<1800)return;lastWorldShift=now;
+ const keep={...inventory},oldMode=mode,oldSelected=selected,oldMined=mined,oldPlaced=placed,oldCrystals=crystals,oldTool=equippedTool,oldArmor=equippedArmor,oldDamage=weaponDamage,oldDefense=armorDefense,wasNether=netherMode,oldHealth=playerHealth;
+ if(wasNether){netherMode=false;netherWorldSeed=Math.floor(Math.random()*90000)+1000;enterNether();}else makeWorld((Date.now()+Math.floor(Math.random()*99999))%100000);
+ inventory=keep;mode=oldMode;selected=oldSelected;mined=oldMined;placed=oldPlaced;crystals=oldCrystals;equippedTool=oldTool;equippedArmor=oldArmor;weaponDamage=oldDamage;armorDefense=oldDefense;playerHealth=oldHealth;
+ player.x=wasNether?-7:0;player.z=wasNether?-5:4;player.y=4;velocityY=0;buildHotbar();updateHealthHUD();say(wasNether?'🔥 You crossed into a new endless Nether region!':'✨ New land discovered! Your adventure continues…');
+}
+let frameCount=0;function animate(){requestAnimationFrame(animate);try{const dt=Math.min(clockDelta(),.04);worldTime+=dt;for(let i=miningEffects.length-1;i>=0;i--){const e=miningEffects[i];e.life-=dt;if(e.chip){e.mesh.position.x+=e.vx*dt;e.mesh.position.y+=e.vy*dt;e.mesh.position.z+=e.vz*dt;e.vy-=5*dt;e.mesh.rotation.x+=dt*8;e.mesh.rotation.y+=dt*7;}if(e.life<=0){scene.remove(e.mesh);if(e.mesh.geometry)e.mesh.geometry.dispose();if(e.mesh.material)e.mesh.material.dispose();miningEffects.splice(i,1);}}const cyclePhase=(worldTime%CYCLE_SECONDS)/CYCLE_SECONDS;const daylight=(()=>{const t=worldTime%CYCLE_SECONDS;if(t<DAY_SECONDS)return .25+.75*Math.sin(Math.PI*t/DAY_SECONDS);const n=(t-DAY_SECONDS)/NIGHT_SECONDS;return .18*(1-n);})();updateDayNight(dt);const sky=netherMode?new THREE.Color(0x8b101d):new THREE.Color(0x101b42).lerp(new THREE.Color(0x83d3f7),daylight);scene.background=sky;scene.fog.color.copy(sky);sun.intensity=netherMode?.55:(.35+daylight*1.45);sun.position.set(Math.sin(cyclePhase*Math.PI*2)*24,2+daylight*33,15);const move=new THREE.Vector3();if(keys.KeyW||keys.ArrowUp)move.z-=1;if(keys.KeyS||keys.ArrowDown)move.z+=1;if(keys.KeyA||keys.ArrowLeft)move.x-=1;if(keys.KeyD||keys.ArrowRight)move.x+=1;if(move.lengthSq()){move.normalize();const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));const dir=forward.multiplyScalar(-move.z).add(right.multiplyScalar(move.x));const speed=keys.ShiftLeft?8:5.2;const stepX=dir.x*speed*dt,stepZ=dir.z*speed*dt;
+ // Solid block collision: the explorer cannot walk through raised blocks.
+ // Jumping raises the feet above a block so the player can climb over it.
+ const blockedAt=(tx,tz)=>{const feet=player.y-1.15+.10,head=player.y+.25;const cx=Math.round(tx),cz=Math.round(tz);for(let bx=cx-1;bx<=cx+1;bx++)for(let bz=cz-1;bz<=cz+1;bz++){if(Math.abs(tx-bx)>.78||Math.abs(tz-bz)>.78)continue;for(let by=-5;by<=9;by++){const bm=blocks.get(key(bx,by,bz));if(!bm)continue;const top=by+.5,bottom=by-.5;if(top>feet&&bottom<head)return true;}}return false;};
+ const nx=player.x+stepX;if(!blockedAt(nx,player.z))player.x=nx;const nz=player.z+stepZ;if(!blockedAt(player.x,nz))player.z=nz;player.x=Math.max(-99999,Math.min(99999,player.x));player.z=Math.max(-99999,Math.min(99999,player.z))}
+if(dragonRideOn){const mount=villains.find(v=>v.userData.kind==='dragon');if(mount){mount.position.x=player.x;mount.position.z=player.z;mount.position.y=Math.max(1.5,player.y-2.2);player.y=Math.max(4,mount.position.y+2.2);velocityY=0;}}if(performance.now()>powerUntil&&powerUntil){powerUntil=0;armorDefense=equippedArmor==='Legendary Dragon Armor'?40:0;updateGearStatus();say('⚡ Superpower has ended.');}if(keys.Space&&onGround){velocityY=7;onGround=false}
+ velocityY-=18*dt;const oldY=player.y;player.y+=velocityY*dt;
+ // Find the top of the block directly beneath the explorer, allowing drops into caves.
+ let groundY=-4.5;const gx=Math.round(player.x),gz=Math.round(player.z);
+ for(let yy=-5;yy<=3;yy++){const bm=blocks.get(key(gx,yy,gz));if(bm && yy+.5<=oldY+.15)groundY=Math.max(groundY,yy+.5);}
+ if(player.y<=groundY+1.15 && velocityY<0){player.y=groundY+1.15;velocityY=0;onGround=true}else if(velocityY!==0)onGround=false;if(selfAvatar){selfAvatar.position.set(player.x,player.y-0.5,player.z);selfAvatar.rotation.y=yaw;selfAvatar.visible=selfView; if(selfView){const distance=4.2;camera.position.set(player.x-Math.sin(yaw)*distance,player.y+1.0+Math.sin(-pitch)*1.2,player.z-Math.cos(yaw)*distance);camera.rotation.order='YXZ';camera.rotation.y=yaw+Math.PI;camera.rotation.x=-pitch;}}if(!selfView){camera.position.set(player.x,player.y,player.z);camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;}
+if((frameCount++%3)===0){for(const o of objects){if(o.userData.kind==='crystal'){o.rotation.y+=dt*2.1;o.position.y+=Math.sin(worldTime*1.8+o.userData.x)*dt*.24}}for(const c of clouds){c.position.x+=c.userData.drift*dt*3;if(c.position.x>34)c.position.x=-34}for(let i=0;i<sparkles.length;i++){const p=sparkles[i];p.position.y+=Math.sin(worldTime*1.5+i)*dt*.36;p.material.opacity=.55+.35*Math.sin(worldTime*2+i);}}
+// Character animation: smooth network movement, shoulder/hip pivots, body bob, head look and occasional blink.
+for(const r of remotePlayers.values()){const av=r.avatar,limbs=av&&av.userData.limbs;if(!limbs)continue;const blend=1-Math.exp(-dt*12);av.position.x+=(limbs.targetX-av.position.x)*blend;av.position.y+=(limbs.targetY-av.position.y)*blend;av.position.z+=(limbs.targetZ-av.position.z)*blend;if(limbs.moving){limbs.walkPhase+=dt*11;const swing=Math.sin(limbs.walkPhase)*.72;limbs.arms[0].rotation.x=swing;limbs.arms[1].rotation.x=-swing;limbs.legs[0].rotation.x=-swing;limbs.legs[1].rotation.x=swing;av.position.y=limbs.targetY+Math.abs(Math.sin(limbs.walkPhase*2))*.045;av.rotation.z=Math.sin(limbs.walkPhase)*.035;}else{const settle=Math.exp(-dt*9);for(const limb of [...limbs.arms,...limbs.legs])limb.rotation.x*=settle;av.position.y+=(limbs.targetY-av.position.y)*(1-Math.exp(-dt*8));av.rotation.z*=settle;}limbs.headGroup.rotation.x=Math.sin(worldTime*1.1+av.position.x)*.035;const now=performance.now();if(now>limbs.blinkAt){limbs.blinkUntil=now+120;limbs.blinkAt=now+2200+Math.random()*3800;}const closed=now<limbs.blinkUntil;for(const eye of limbs.eyes)eye.scale.y=closed?.12:1;}
+ netTimer+=dt;if(netTimer>.12){netTimer=0;if(netReady)sendNet({type:'pos',id:peer&&peer.id,x:player.x,y:player.y,z:player.z,yaw:yaw,skin:playerSkin,name:playerDisplayName});}
+ if(overlay.dataset.started==='yes'&&!playerDead){hungerClock+=dt;if(hungerClock>35){hungerClock=0;hunger=Math.max(0,hunger-1);updateHungerHUD();if(hunger===0)hurtPlayer(1);}}updateVillains(dt);updateVillagers(dt);if(netherKing)updateBossHud();keepWorldEndless();renderer.render(scene,camera);updateStats();window.__BU_STARTUP_OK=true;if(overlay.dataset.started==='yes'||overlay.classList.contains('hidden')){overlay.classList.add('hidden');overlay.style.setProperty('display','none','important');overlay.style.pointerEvents='none';}}catch(err){const panel=document.getElementById('startupError');const msg=document.getElementById('startupErrorText');if(panel&&msg){msg.textContent='The 3D world stopped while starting: '+(err&&err.message?err.message:'unknown error')+'. Please reload the file and check your internet connection.';panel.style.display='block';}console.error(err);}}
+let last=performance.now();function clockDelta(){let n=performance.now(),d=(n-last)/1000;last=n;return d}
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+if(!loadSave())makeWorld();selfAvatar=makeAvatar();addNpcNameTag(selfAvatar,playerDisplayName,2.15);selfAvatar.visible=false;applySkinToAvatar(selfAvatar,playerSkin);updateHealthHUD();updateHungerHUD();animate();
+})();
+</script>
+</body>
+</html>
